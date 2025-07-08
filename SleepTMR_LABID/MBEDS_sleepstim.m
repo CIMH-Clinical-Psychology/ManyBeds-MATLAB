@@ -98,7 +98,7 @@ function [RES, S] = MBEDS_sleepstim
     
     %% read in background noise 
     backgroundnoise_name = 'noise';
-    backgroundnoise = audioread(fullfile(soundFilePath, [backgroundnoise_name '.wav']))';
+    backgroundnoise = audioread(fullfile(soundFilePath, [backgroundnoise_name '.mp3']))';
     if size(backgroundnoise,1)==1
         backgroundnoise = repmat(backgroundnoise,2,1);
     end

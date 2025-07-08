@@ -115,7 +115,7 @@ function [RES, S] = MBEDS_SART
     PsychPortAudio('Volume', paBGDeviceHandle , S.backgroundVolume);
     PsychPortAudio('Volume', paSTIMDeviceHandle , S.soundVolume);
 
-    backgroundnoise = audioread(fullfile('Stimuli', 'noise.wav'))';
+    backgroundnoise = audioread(fullfile('Stimuli', 'noise.mp3'))';
     if size(backgroundnoise,1)==1
         backgroundnoise = repmat(backgroundnoise,2,1);
     end
