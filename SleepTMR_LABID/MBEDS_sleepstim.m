@@ -110,10 +110,13 @@ end
 function [deviceIndex, fs] = chooseAudioOutputDevice()
     devices = PsychPortAudio('GetDevices');
     fprintf('\nAvailable Audio Output Devices:\n\n');
-    for i = 1:numel(devices)
-        d = devices(i);
+    
+    outputDevices = devices([devices.NrOutputChannels] > 0);
+    
+    for i = 1:numel(outputDevices)
+        d = outputDevices(i);
         name = d.DeviceName;
-        if numel(name) > 30, name = [name(1:27) '...']; end
+        if numel(name) > 40, name = [name(1:min([length(name),40])) '...']; end
         fprintf('  [%d] %s (%s), %d ch, %.0f Hz\n', ...
             d.DeviceIndex, name, d.HostAudioAPIName, ...
             d.NrOutputChannels, d.DefaultSampleRate);
@@ -129,17 +132,18 @@ function [deviceIndex, fs] = chooseAudioOutputDevice()
     end
 
     sel = str2double(str);
-    idx = find([devices.DeviceIndex] == sel, 1);  % ← robust lookup
+    idx = find([devices.DeviceIndex] == sel & [devices.NrOutputChannels] > 0, 1);  % valid output device only
 
     if isempty(idx)
         warning('Invalid selection; using system default device.');
         deviceIndex = [];
         fs          = 44100;
     else
-        deviceIndex = sel;                         % PsychPortAudio wants the index itself
+        deviceIndex = sel;
         fs          = devices(idx).DefaultSampleRate;
     end
 end
+
 
 
 function cleanUp()

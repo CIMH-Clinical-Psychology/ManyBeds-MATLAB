@@ -3,7 +3,8 @@ function [RES, S] = MBEDS_SART
     KbName('UnifyKeyNames');
 
     cleanupObj = onCleanup(@() cleanUp());  % remove screen and audio playback in case of crash
-    InitializePsychSound
+    InitializePsychSound(1)
+
     PsychPortAudio('Close') % stop previous playback
     %% General Study Information
     S = struct;                                     
@@ -15,11 +16,17 @@ function [RES, S] = MBEDS_SART
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
     S.subnr = input("Participant ID: ", "s");
     S.subid = sprintf("%s_%s", S.lab_id, S.subnr);
-    S.start_cues_after = 5;  % minutes after which the playing of the cues should start
-    S.stimdelay = 5;         % seconds between stimulus presentations
+    S.start_cues_after = 0;  % minutes after which the playing of the cues should start
+    S.stimdelay = 5;         % seconds between stimulus  presentations
     S.max_repetitions = 3;   % repeat all stimuli maximally 3 rounds
-
-    S.usetrigger = false; % set to true to use parallel port for EEG triggers
+    S.stim_dur = 0.450; %Stimulus Duration
+    S.mask_dur_mean = 4.550; % Mask duration mean seconds      % is 4.450 in OpenSesame, but Wamsley 2023 says 5 s SOA
+    S.mask_dur_sd = 1;       % standard deviation to sample within, will be truncated above/bellow
+    S.key_pause = 0.5;
+    S.backgroundVolume = 0.3;
+    S.soundVolume = 0.3;
+    S.usetrigger = true; % set to true to use parallel port for EEG triggers
+    S.lpt_hex = '4FF8'; % parallel port for EEG triggers 
 
     currpath = fileparts(mfilename('fullpath'));                            % currpath: folder should contain Results and SleepSounds  
     if isempty(currpath)
@@ -43,17 +50,16 @@ function [RES, S] = MBEDS_SART
         load(fullfile(currpath, "Stimuli", "MBEDS_SART_stim_TE"+".mat"),"stimulus_control");
         S.train = false;
     end
+
     S.probes = stimulus_control(:,1);
     S.targets = stimulus_control(:,2);
     S.ntrials = length(stimulus_control);
     S.breaks = zeros(S.ntrials,1);
     S.breaks(168) = 1;
-    S.stim_dur = 0.450; %Stimulus Duration
-    S.mask_dur_mean = 4.550; % Mask duration mean seconds      % is 4.450 in OpenSesame, but Wamsley 2023 says 5 s SOA
-    S.mask_dur_sd = 1;       % standard deviation to sample within, will be truncated above/bellow
-    S.key_pause = 0.5;
-    S.backgroundVolume = 0.3;
-    S.soundVolume = 0.3;
+
+    if ~S.usetrigger
+        warning('Will NOT send triggers, S.usetrigger = false')
+    end
 
     %% read in audiofiles
     % read in the participant's anticlustered order and sound list
@@ -138,6 +144,8 @@ function [RES, S] = MBEDS_SART
     tState.nIds                 = numel(sound_ids_subject);
     tState.order                = sound_ids_subject(randperm(tState.nIds)); % initial shuffle
     tState.is_training          = S.train;  % disable cueing for training
+    tState.DEBUG = DEBUG;
+    tState.usetrigger = S.usetrigger;
 
     % define a cue timer that runs a loop inside.
     % we're basically pretending that the timer is a thread.
@@ -179,7 +187,6 @@ function [RES, S] = MBEDS_SART
 
     %% Initialization
     rng('shuffle'); % Random seed based on current time
-    lpt_hex = '4FF8'; % parallel port for EEG triggers 
 
     % prepare trigger ports
     if (S.usetrigger == true)
@@ -190,7 +197,7 @@ function [RES, S] = MBEDS_SART
         if( ioStatus ~= 0 )
             error('inp/outp installation failed');
         end
-        lpt_address = hex2dec(lpt_hex);
+        lpt_address = hex2dec(S.lpt_hex);
     end
 
     %% prepare logfile
@@ -383,14 +390,14 @@ function [RES, S] = MBEDS_SART
             tim = displayProbe;
 
             printf(logfile, '[%9.3f] PROBE %03d\n', tim - S.t0, n_probe);
-            sendTrigger(98);
+            sendTrigger(90);
             keyname = [];
             while isempty(keyname) | ~ismember(keyname(1), '12345') % 1-5, cross-OS style
                 [tim, keys] = KbWait(-1,2);
                 keyname = getKeyNum(keys);
             end
             printf(logfile, '[%9.3f] PROBE_RESPONSE %03d (%s)\n', tim - S.t0, n_probe, keyname);
-            sendTrigger(99);
+            sendTrigger(90 + str2double(keyname));  % should send 91-95 depending on answer
             RES.proberesponses(n_probe) = str2double(keyname);
 
             tim = displayMask;
@@ -502,6 +509,11 @@ function [RES, S] = MBEDS_SART
     end
 
     function sendTrigger(trigger)
+        if DEBUG
+            disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
+            return
+        end
+
         if S.usetrigger == true
             io64(ioObj, lpt_address, trigger);
             WaitSecs(triggerWriteDelay);
@@ -515,10 +527,13 @@ end
 function [deviceIndex, fs] = chooseAudioOutputDevice()
     devices = PsychPortAudio('GetDevices');
     fprintf('\nAvailable Audio Output Devices:\n\n');
-    for i = 1:numel(devices)
-        d = devices(i);
+    
+    outputDevices = devices([devices.NrOutputChannels] > 0);
+    
+    for i = 1:numel(outputDevices)
+        d = outputDevices(i);
         name = d.DeviceName;
-        if numel(name) > 30, name = [name(1:27) '...']; end
+        if numel(name) > 40, name = [name(1:min([length(name),40])) '...']; end
         fprintf('  [%d] %s (%s), %d ch, %.0f Hz\n', ...
             d.DeviceIndex, name, d.HostAudioAPIName, ...
             d.NrOutputChannels, d.DefaultSampleRate);
@@ -534,14 +549,14 @@ function [deviceIndex, fs] = chooseAudioOutputDevice()
     end
 
     sel = str2double(str);
-    idx = find([devices.DeviceIndex] == sel, 1);  % ← robust lookup
+    idx = find([devices.DeviceIndex] == sel & [devices.NrOutputChannels] > 0, 1);  % valid output device only
 
     if isempty(idx)
         warning('Invalid selection; using system default device.');
         deviceIndex = [];
         fs          = 44100;
     else
-        deviceIndex = sel;                         % PsychPortAudio wants the index itself
+        deviceIndex = sel;
         fs          = devices(idx).DefaultSampleRate;
     end
 end
@@ -560,6 +575,20 @@ function cleanUp()
 end
 
 function playCues(timerObj, ~)
+
+    function sendTrigger(trigger)
+        if self.DEBUG
+            disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
+            return
+        end
+
+        if self.usetrigger == true
+            io64(ioObj, lpt_address, trigger);
+            WaitSecs(triggerWriteDelay);
+            io64(ioObj, lpt_address, 0);
+        end
+    end   
+
     % this timer object will be called every 5 seconds and play a sound
     % or not, depending on the current state of UserData
     self  = get(timerObj, 'UserData');  % simulate Python behaviour for familiarity
@@ -603,6 +632,9 @@ function playCues(timerObj, ~)
 
     % pick and play
     idx = self.order(self.countstim);
+
+    sendTrigger(100 + idx);
+
     stim = self.stim_dict(idx);
     PsychPortAudio('FillBuffer', self.paSTIMDeviceHandle, stim{2});
     lastStim = PsychPortAudio('Start', self.paSTIMDeviceHandle, 1, 0, 1);
