@@ -28,7 +28,6 @@ function [RES, S] = MBEDS_sleepstim
     if ~S.debug
         S.minsleepdur = 45;     % minutes before experiment can be stopped
     else
-
         warning('Debug mode is still enabled, disable in MBEDS_sleepstim.m ~line 21')
         S.minsleepdur = 1;     % minutes before experiment can be stopped
     end

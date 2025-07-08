@@ -168,9 +168,9 @@ t = timer('ExecutionMode', 'fixedRate', ...
     'TimerFcn', @(~,~) updateLabels(timerLabel));
 
 %% prepare trigger ports
+triggerWriteDelay = 0.005;  % Trigger duration in s
 
 if (S.debug == false)
-    triggerWriteDelay = 0.005;  % Trigger duration in s
 
     ioObj = io64;
     ioStatus = io64(ioObj);
@@ -214,11 +214,7 @@ t0 = GetSecs;
 t1 = NaN;
 printf(logfile, '[%9.3f] START %s\r\n', GetSecs-t0, datetime);
 
-if (S.debug == false)
-    io64(ioObj,lpt_address,255);
-    WaitSecs(triggerWriteDelay);
-    io64(ioObj,lpt_address,0);
-end
+sendTrigger(255)
 
 while ~stopExperiment
 
@@ -251,12 +247,7 @@ while ~stopExperiment
             PsychPortAudio('FillBuffer', paSTIMDeviceHandle, stim{2});
             stimTime = PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
 
-            % send trigger to EEG
-            if (S.debug == false)
-                io64(ioObj,lpt_address,stim_idx);
-                WaitSecs(triggerWriteDelay);
-                io64(ioObj,lpt_address,0);
-            end
+            sendTrigger(stim_idx)
 
             printf(logfile, '[%9.3f] STIM %02d (%s)\r\n', stimTime-t0, stim_idx, stim{1});
             RES.stimtime = [RES.stimtime stimTime-t0];
@@ -276,11 +267,7 @@ end
         printf(logfile, '[%9.3f] LIGHTSOFF\r\n', GetSecs-t0);
         t1 = GetSecs;
 
-        if (S.debug == false)
-            io64(ioObj,lpt_address,254);
-            WaitSecs(triggerWriteDelay);
-            io64(ioObj,lpt_address,0);
-        end
+        sendTrigger(254)
 
         start_exp_btn.Enable = 'off';
         start_snd_btn.Enable = 'on';
@@ -304,12 +291,7 @@ end
         fprintf('Start sound stimulation: %s\n', datetime);
         printf(logfile, '[%9.3f] STARTSTIM\r\n', GetSecs-t0);
 
-
-        if (S.debug == false)
-            io64(ioObj,lpt_address,251);
-            WaitSecs(triggerWriteDelay);
-            io64(ioObj,lpt_address,0);
-        end
+        sendTrigger(251)
 
         testSoundVolumeBtn.Enable = 'off';
         start_snd_btn.Enable = 'off';
@@ -323,11 +305,7 @@ end
         fprintf('Stop sound stimulation: %s\n', datetime);
         printf(logfile, '[%9.3f] STOPSTIM\r\n', GetSecs-t0);
 
-        if (S.debug == false)
-            io64(ioObj,lpt_address,250);
-            WaitSecs(triggerWriteDelay);
-            io64(ioObj,lpt_address,0);
-        end
+        sendTrigger(250)
 
         testSoundVolumeBtn.Enable = 'on';
         start_snd_btn.Enable = 'on';
@@ -387,6 +365,9 @@ end
     end
 
     function startBackgroundTest(~, ~)
+
+        sendTrigger(150)
+
         status = PsychPortAudio('GetStatus', paBGDeviceHandle);
         if ~status.Active 
             PsychPortAudio('Start', paBGDeviceHandle, 0, 0, 1); 
@@ -395,6 +376,9 @@ end
     end
 
     function stopBackgroundTest(~, ~)
+
+        sendTrigger(151)
+
         PsychPortAudio('Stop', paBGDeviceHandle, 0);
         printf(logfile, '[%9.3f] BACKGROUNDTESTOFF\r\n', GetSecs-t0);
     end
@@ -404,6 +388,8 @@ end
         stim = stim_dict(99);
         PsychPortAudio('FillBuffer', paSTIMDeviceHandle, stim{2});
         PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
+
+        sendTrigger(199)
 
         printf(logfile, '[%9.3f] SOUNDTEST\r\n', GetSecs-t0);
     end
@@ -504,12 +490,8 @@ end
                 playStimulationSounds = false;
             end
     
-            if (S.debug == false)
-                io64(ioObj,lpt_address,250);
-                WaitSecs(triggerWriteDelay);
-                io64(ioObj,lpt_address,0);
-            end
-
+            sendTrigger(250)
+ 
             fprintf('End of Experiment: %s\n', datetime);
             RES.sleepduration = GetSecs-t1;
 
@@ -525,11 +507,7 @@ end
                 logfile = 1;
             end
     
-            if (S.debug == false)
-                io64(ioObj,lpt_address,253);
-                WaitSecs(triggerWriteDelay);
-                io64(ioObj,lpt_address,0);
-            end
+            sendTrigger(253)
 
             % Stop sound series and release audio buffers
             PsychPortAudio('Stop', paSTIMDeviceHandle, 1);
@@ -547,6 +525,18 @@ end
         % prevent user from closing figure by doing nothing here
     end
 
+    function sendTrigger(trigger)
+        if S.debug
+            disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
+            return
+        end
+    
+        if S.usetrigger == true
+            io64(ioObj, lpt_address, trigger);
+            WaitSecs(triggerWriteDelay);
+            io64(ioObj, lpt_address, 0);
+        end
+    end   
 end
 
 function cleanUp()
@@ -565,3 +555,4 @@ function printf(fileID, varargin)
     % Print to console
     fprintf(varargin{:});
 end
+
