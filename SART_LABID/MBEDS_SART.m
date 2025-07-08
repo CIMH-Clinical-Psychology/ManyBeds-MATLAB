@@ -1,5 +1,5 @@
 function [RES, S] = MBEDS_SART
-    DEBUG = true;  % debug flag, set to false for real experiment
+    DEBUG = false;  % debug flag, set to false for real experiment
     KbName('UnifyKeyNames');
 
     cleanupObj = onCleanup(@() cleanUp());  % remove screen and audio playback in case of crash

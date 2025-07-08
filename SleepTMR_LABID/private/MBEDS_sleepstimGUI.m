@@ -29,7 +29,7 @@ uicontrol('Style', 'text', ...
 uicontrol('Style', 'text', ...
     'Position', [300, 325, 200, 40], ...
     'FontSize', 8, ...
-    'String', 'ManyBeds v0.1');
+    'String', 'ManyBeds v0.2');
 
 % Create Start and End Experiment buttons
 stopExperiment = false;
@@ -284,7 +284,7 @@ end
 
         start_exp_btn.Enable = 'off';
         start_snd_btn.Enable = 'on';
-        testSoundVolumeBtn.Enable = 'off';
+        % testSoundVolumeBtn.Enable = 'off';
         % incSound_btn.Enable = 'off';
         % decSound_btn.Enable = 'off';
         % incBg_btn.Enable = 'off';
@@ -304,12 +304,14 @@ end
         fprintf('Start sound stimulation: %s\n', datetime);
         printf(logfile, '[%9.3f] STARTSTIM\r\n', GetSecs-t0);
 
+
         if (S.debug == false)
             io64(ioObj,lpt_address,251);
             WaitSecs(triggerWriteDelay);
             io64(ioObj,lpt_address,0);
         end
 
+        testSoundVolumeBtn.Enable = 'off';
         start_snd_btn.Enable = 'off';
         start_snd_btn.Value = 1;
         stop_snd_btn.Enable = 'on';
@@ -327,6 +329,7 @@ end
             io64(ioObj,lpt_address,0);
         end
 
+        testSoundVolumeBtn.Enable = 'on';
         start_snd_btn.Enable = 'on';
         start_snd_btn.Value = 0;
         stop_snd_btn.Enable = 'off';
