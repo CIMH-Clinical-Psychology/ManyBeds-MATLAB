@@ -1,0 +1,136 @@
+function [RES, S] = MBEDS_sleepstim
+    % Reactivation stimulation during sleep for the Many Beds project
+    % When promted, provide participant ID
+    % 
+    % Subfolders:
+    %   Stimuli - contains stimulus sounds ("s*.wav") and images("p*.wav"), baselinesound ("baselinesound.wav"), and background noise ("noise.wav")
+    %   StimFilesSubjects - contains "PARTICIPANTID_anticlust.csv" with header ("x") and soundfile names ("s*.wav"), this file comes from the learning task
+    %   Results - contains logfiles and results files for each subject. Logfiles are appended for each start with same SUBID. Results files are backupped for older versions. 
+
+    %% initialize log file und result variables
+    % Do not forget to set address of parallel port in MBEDS_sleepstimGUI !
+    S = struct;                                     % contains general study information
+    S.location = "C08_Tuebingen";                                    % adapt according to location
+    S.lab_id = "C08";                                           % adapt according to location (LAB ID)
+
+    fprintf("ManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
+    S.subnr = input("Participant ID: ");
+    S.debug = true;                                                         % MUST BE false during experiment
+    S.max_repetitions = 3;  % repeat all stimuli maximally 3 rounds
+
+    [S.audio_device_id, S.audio_fs] = chooseAudioOutputDevice();
+    
+    if ~S.debug
+        S.stimdelay = 5;        % seconds between stimulus presentations
+        S.minsleepdur = 45;     % minutes before experiment can be stopped
+    else
+        disp('WARNING: Debug mode is still enabled, disable in sleepstim.m ~line 18')
+        S.stimdelay = 5;        % seconds between stimulus presentations
+        S.minsleepdur = 1;     % minutes before experiment can be stopped
+    end
+
+    currpath = fileparts(mfilename('fullpath'));                            % currpath: folder should contain Results and SleepSounds  
+    if isempty(currpath)
+        currpath = cd;                                                      % use path of current function or current directory
+    end
+    
+    soundFilePath = fullfile(currpath,"Stimuli");
+    if ~exist(soundFilePath,"dir")
+        error("Cannot find SleepSound folder");
+    end
+    
+    resultsFilePath = fullfile(currpath, "Results");
+    if ~exist(resultsFilePath,"dir")
+        mkdir(resultsFilePath);
+    end
+    
+    S.subid = sprintf("%s_%03d", S.lab_id, S.subnr);
+    
+    %% read in audiofiles
+    
+    sound_csv = readtable(fullfile(soundFilePath, "MBEDS_soundfiles.csv")); % read sound names
+    anticlust_file = fullfile(currpath, "StimFilesSubjects", sprintf("%s_anticlust.csv", S.subid));
+
+    try
+        sound_csv_subject = readtable(anticlust_file);
+    catch
+        error("Cannot load stimsounds for subject %s from subfolder StimFilesSubjects, " + ...
+              "make sure the file %s has been calculated and is present", ...
+              S.subid, anticlust_file);
+    end
+    
+    if istable(sound_csv_subject)
+        sound_csv_subject = table2cell(sound_csv_subject); 
+    end
+    sounds_subject = sound_csv_subject(:);
+    sound_ids_subject = double(extract(string(sounds_subject),digitsPattern))';
+    
+    stim_id = table2array(sound_csv(:, 'ID'));
+    stim_name = table2array(sound_csv(:, 'Name'));
+    stim_name_dict = containers.Map(stim_id, stim_name);
+    
+    stim_dict = containers.Map('KeyType', 'double', 'ValueType', 'any');
+    for i = stim_id'
+        soundFilename = fullfile(soundFilePath, sprintf('s%d.wav', i)); 
+        imageFilename = fullfile(soundFilePath, sprintf('p%d.bmp', i));  
+        audio = audioread(soundFilename)';
+        if size(audio,1)==1
+            audio = repmat(audio,2,1);
+        end
+        image = imread(imageFilename);
+        stim_dict(i) = {stim_name_dict(i), audio, image};
+    end
+    
+    %% read in baseline sound
+    baselinesound_name = 'baselinesound';
+    audio = audioread(fullfile(soundFilePath, [baselinesound_name '.wav']))';
+    if size(audio,1)==1
+        audio = repmat(audio,2,1);
+    end
+    stim_dict(99) = {baselinesound_name, audio, ones(100, 100)};
+    %add the baseline sound to stimulation list
+    S.sound_ids_subject = [sound_ids_subject, repmat(99, 1, length(sound_ids_subject))];
+    
+    %% read in background noise 
+    backgroundnoise_name = 'noise';
+    backgroundnoise = audioread(fullfile(soundFilePath, [backgroundnoise_name '.wav']))';
+    if size(backgroundnoise,1)==1
+        backgroundnoise = repmat(backgroundnoise,2,1);
+    end
+    
+    %% start experiment
+    RES = MBEDS_sleepstimGUI(S, resultsFilePath, stim_dict, backgroundnoise);
+end
+
+function [deviceIndex, fs] = chooseAudioOutputDevice()
+    % List all audio output devices
+    devices = PsychPortAudio('GetDevices');
+    fprintf('\n\n  Available Audio Output Devices:\n\n');
+    for i = 1:numel(devices)
+        d = devices(i);
+        name = d.DeviceName;
+        if numel(name) > 30
+            name = [name(1:27) '...'];
+        end
+        fprintf('  [%d] %s (%s), %d ch, %.0f Hz\n', ...
+            d.DeviceIndex, name, d.HostAudioAPIName, ...
+            d.NrOutputChannels, d.DefaultSampleRate);
+    end
+    fprintf('\nPlease select a audio playback device. Leave empty (just press enter) to choose default device.\n');
+    str = input('Device number: ', 's');
+    if isempty(str)
+        deviceIndex = [];
+        fs = 44100;
+    else
+        sel = str2double(str);
+        idxs = [devices.DeviceIndex];
+        if isnan(sel) || ~ismember(sel, idxs)
+            warning('Invalid selection, using default device.');
+            deviceIndex = [];
+            fs = 44100;
+
+        els
+            deviceIndex = [sel];
+        end
+    end
+end
