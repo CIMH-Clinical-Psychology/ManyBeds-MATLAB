@@ -16,7 +16,7 @@ function [RES, S] = MBEDS_SART
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
     S.subnr = input("Participant ID: ", "s");
     S.subid = sprintf("%s_%s", S.lab_id, S.subnr);
-    S.start_cues_after = 0;  % minutes after which the playing of the cues should start
+    S.start_cues_after = 5;  % minutes after which the playing of the cues should start
     S.stimdelay = 5;         % seconds between stimulus  presentations
     S.max_repetitions = 3;   % repeat all stimuli maximally 3 rounds
     S.stim_dur = 0.450; %Stimulus Duration
