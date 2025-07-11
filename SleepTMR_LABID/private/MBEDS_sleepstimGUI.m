@@ -1,10 +1,13 @@
 function RES = MBEDS_sleepstimGUI(S, fileNameBase, stim_dict, backgroundnoise)
 
 cleanupObj = onCleanup(@() cleanUp());  % remove screen and audio playback in case of crash
+
+projectRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+addpath(projectRoot);
 %% Initialize experiment
 RES = struct;                                   % contains results of current subject
 
-lpt_hex = '3FF8'; % LPT1        Address of parallel port    ADJUST TO LOCAL SITUATION
+lpt_hex = c.lpt_hex; % LPT1        Address of parallel port    ADJUST TO LOCAL SITUATION
 % lpt_hex  = '4FF8'; % LPT2
 
 %% Create UI
@@ -531,7 +534,7 @@ end
             return
         end
     
-        if S.usetrigger == true
+        if S.debug == false
             io64(ioObj, lpt_address, trigger);
             WaitSecs(triggerWriteDelay);
             io64(ioObj, lpt_address, 0);

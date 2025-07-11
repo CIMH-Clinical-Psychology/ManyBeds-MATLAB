@@ -6,12 +6,22 @@ function [RES, S] = MBEDS_SART
     InitializePsychSound(1)
 
     PsychPortAudio('Close') % stop previous playback
+
+    projectRoot = fileparts(fileparts(mfilename('fullpath')));
+    addpath(projectRoot);
+    
     %% General Study Information
+    C = MBEDS_LabConfig;
     S = struct;                                     
-    S.location = "C08_Tuebingen";                                    
-    S.lab_id = "C08"; 
+    S.location = C.location;                                    
+    S.lab_id = C.lab_id; 
+    S.language = C.language;
+    S.lpt_hex = C.lpt_hex;   % parallel port for EEG triggers 
+
     S.study = "SART";
-    S.language = "en"; % can be de/en/cn/nl/fr/jp
+
+    S.usetrigger = C.usetrigger_SART; % set to true to use parallel port for EEG triggers
+
 
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
     S.subnr = input("Participant ID: ", "s");
@@ -23,10 +33,9 @@ function [RES, S] = MBEDS_SART
     S.mask_dur_mean = 4.550; % Mask duration mean seconds      % is 4.450 in OpenSesame, but Wamsley 2023 says 5 s SOA
     S.mask_dur_sd = 1;       % standard deviation to sample within, will be truncated above/bellow
     S.key_pause = 0.5;
-    S.backgroundVolume = 0.3;
+    S.backgroundVolume = 0.8;
     S.soundVolume = 0.3;
-    S.usetrigger = true; % set to true to use parallel port for EEG triggers
-    S.lpt_hex = '4FF8'; % parallel port for EEG triggers 
+    
 
     currpath = fileparts(mfilename('fullpath'));                            % currpath: folder should contain Results and SleepSounds  
     if isempty(currpath)
@@ -162,7 +171,7 @@ function [RES, S] = MBEDS_SART
     if DEBUG
         Screen('Preference', 'VisualDebugLevel', 3);
         Screen('Preference', 'SkipSyncTests', 0);
-        warning('The DEBUG flag has been set in the beginning of the file. Please remove before runnign the study')
+        warning('The DEBUG flag has been set in the beginning of the file. Please remove before running the study')
         PsychDebugWindowConfiguration(0, 0.8)
         debug_rect = [1920 100 3000 800]; % Adjust as needed=
         [win, rect] = Screen('OpenWindow', screenNumber, black, debug_rect);
