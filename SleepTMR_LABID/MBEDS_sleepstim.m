@@ -24,7 +24,9 @@ function [RES, S] = MBEDS_sleepstim
 
     % debug mode will disable sending EEG triggers
     S.debug = true;     % MUST BE false during experiment
+    S.usetrigger = false;  % MUST BE false during experiment
 
+    
     if ~S.debug
         S.minsleepdur = 45;     % minutes before experiment can be stopped
     else
