@@ -15,6 +15,7 @@ function [RES, S] = MBEDS_sleepstim
     addpath(projectRoot);
 
     %% General Study Information
+    C = MBEDS_LabConfig;
     S = struct;                                     % contains general study information
     S.location = C.location;                                    % adapt according to location
     S.lab_id = C.lab_id;                                           % adapt according to location (LAB ID)
