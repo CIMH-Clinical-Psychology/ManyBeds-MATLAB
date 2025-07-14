@@ -4,8 +4,8 @@ function C = MBEDS_LabConfig
     % MBEDS_sleepstim and MBEDS_SART scripts.
     
     % 1) lab ID
-    C.location = "C08_Mannheim";         % your lab ID + location
-    C.lab_id   = "C08";                  % your lab ID       
+    C.location = "C99_Mannheim";         % your lab ID + location
+    C.lab_id   = "C99";                  % your lab ID       
     
     % 2) language of SART
     C.language = "en";            % options: 'de', 'en', 'fr', 'cn', 'jp'

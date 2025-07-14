@@ -19,6 +19,7 @@ function [RES, S] = MBEDS_SART
 
     S.debug = C.debug_mode;
     S.study = "SART";
+    warning('The DEBUG flag has been set in the config file. Please remove before running the study')
 
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
     S.subnr = input("Participant ID: ", "s");
