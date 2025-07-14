@@ -11,14 +11,20 @@ function [RES, S] = MBEDS_SART
     
     %% General Study Information
     C = MBEDS_LabConfig;
-    S = struct;                                     
+    S = struct;        
+    S.study = "SART";
     S.location = C.location;                                    
     S.lab_id = C.lab_id; 
     S.language = C.language;
     S.lpt_hex = C.lpt_hex;   % parallel port for EEG triggers 
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
+    % change per participants
+    S.backgroundVolume = 0.8;
+    S.soundVolume = 0.3;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
+
     S.debug = C.debug_mode;
-    S.study = "SART";
     warning('The DEBUG flag has been set in the config file. Please remove before running the study')
 
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
@@ -31,9 +37,6 @@ function [RES, S] = MBEDS_SART
     S.mask_dur_mean = 4.550; % Mask duration mean seconds      % is 4.450 in OpenSesame, but Wamsley 2023 says 5 s SOA
     S.mask_dur_sd = 1;       % standard deviation to sample within, will be truncated above/bellow
     S.key_pause = 0.5;
-    S.backgroundVolume = 0.8;
-    S.soundVolume = 0.3;
-    
 
     currpath = fileparts(mfilename('fullpath'));                            % currpath: folder should contain Results and SleepSounds  
     if isempty(currpath)
