@@ -11,27 +11,30 @@ function [RES, S] = MBEDS_sleepstim
     cleanupObj = onCleanup(@() cleanUp());  % remove screen and audio playback in case of crash
     InitializePsychSound
 
-    % Do not forget to set address of parallel port in MBEDS_sleepstimGUI !
-    S = struct;                                     % contains general study information
-    S.location = "C08_Tuebingen";                                    % adapt according to location
-    S.lab_id = "C08";                                           % adapt according to location (LAB ID)
+    projectRoot = fileparts(fileparts(mfilename('fullpath')));
+    addpath(projectRoot);
+
+    %% General Study Information
+    C = MBEDS_LabConfig;
+    S = struct;                  % contains general study information
+    S.location = C.location;     % adapt according to location
+    S.lab_id = C.lab_id;         % adapt according to location (LAB ID)
+    S.lpt_hex = C.lpt_hex;       % parallel port to use
 
     fprintf("ManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
-    S.subnr = input("Participant ID: ", "s");   % enter participant ID as a string, e.g., "123"
+    S.subnr = input("Participant ID: ", "s");   % enter participant ID
     S.max_repetitions = 3;  % repeat all stimuli maximally 3 rounds
     S.stimdelay = 5;        % seconds between stimulus presentations
     [S.audio_device_id, S.audio_fs] = chooseAudioOutputDevice();
 
-    % debug mode will disable sending EEG triggers
-    S.debug = true;     % MUST BE false during experiment
-    S.usetrigger = false;  % MUST BE false during experiment
+    % debug mode will disable sending EEG triggers and send debug messages instead
+    S.debug = C.debug_mode;     % MUST BE false during experiment
 
-    
-    if ~S.debug
-        S.minsleepdur = 45;     % minutes before experiment can be stopped
-    else
+    if S.debug
         warning('Debug mode is still enabled, disable in MBEDS_sleepstim.m ~line 21')
         S.minsleepdur = 1;     % minutes before experiment can be stopped
+    else
+        S.minsleepdur = 45;     % minutes before experiment can be stopped
     end
 
     currpath = fileparts(mfilename('fullpath'));                            % currpath: folder should contain Results and SleepSounds  

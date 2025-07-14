@@ -1,10 +1,13 @@
 function RES = MBEDS_sleepstimGUI(S, fileNameBase, stim_dict, backgroundnoise)
 
 cleanupObj = onCleanup(@() cleanUp());  % remove screen and audio playback in case of crash
+
+projectRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+addpath(projectRoot);
 %% Initialize experiment
 RES = struct;                                   % contains results of current subject
 
-lpt_hex = '3FF8'; % LPT1        Address of parallel port    ADJUST TO LOCAL SITUATION
+% lpt_hex = c.lpt_hex; % LPT1        Address of parallel port    ADJUST TO LOCAL SITUATION
 % lpt_hex  = '4FF8'; % LPT2
 
 %% Create UI
@@ -170,14 +173,15 @@ t = timer('ExecutionMode', 'fixedRate', ...
 %% prepare trigger ports
 triggerWriteDelay = 0.005;  % Trigger duration in s
 
-if (S.debug == false)
-
+if S.debug
+    warning('DEBUG_MODE active, will not send triggers')
+else
     ioObj = io64;
     ioStatus = io64(ioObj);
     if( ioStatus ~= 0 )
        error('inp/outp installation failed');
     end
-    lpt_address = hex2dec(lpt_hex);
+    lpt_address = hex2dec(S.lpt_hex);
 end
     
 %% prepare audiobuffers
@@ -529,9 +533,7 @@ end
         if S.debug
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
-        end
-    
-        if S.usetrigger == true
+        else
             io64(ioObj, lpt_address, trigger);
             WaitSecs(triggerWriteDelay);
             io64(ioObj, lpt_address, 0);
