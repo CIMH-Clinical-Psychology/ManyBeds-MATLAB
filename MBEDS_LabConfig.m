@@ -14,10 +14,7 @@ function C = MBEDS_LabConfig
     C.lpt_hex = '3FF8'; 
 
 
-    % 4) debug mode MBEDS_sleepstim.m
-    C.debug_sleepstim = true;       % set to false to send triggers
-
-    % 5) debug mode MBEDS_SART.m
-    C.usetrigger_SART = false;      % set to true to send triggers
+    % 4) debug mode
+    C.debug_mode = true;       % set to false to send triggers
     
 end

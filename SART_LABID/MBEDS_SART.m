@@ -168,7 +168,7 @@ function [RES, S] = MBEDS_SART
     screenNumber = max(Screen('Screens')); % Use the current monitor
     white = WhiteIndex(screenNumber);
     black = BlackIndex(screenNumber);
-    if DEBUG
+    if C.debug_mode
         Screen('Preference', 'VisualDebugLevel', 3);
         Screen('Preference', 'SkipSyncTests', 0);
         warning('The DEBUG flag has been set in the beginning of the file. Please remove before running the study')
@@ -518,7 +518,7 @@ function [RES, S] = MBEDS_SART
     end
 
     function sendTrigger(trigger)
-        if DEBUG
+        if C.debug_mode
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
         end

@@ -28,7 +28,7 @@ function [RES, S] = MBEDS_sleepstim
     [S.audio_device_id, S.audio_fs] = chooseAudioOutputDevice();
 
     % debug mode will disable sending EEG triggers
-    S.debug = C.debug_sleepstim;     % MUST BE false during experiment
+    S.debug = C.debug_mode;     % MUST BE false during experiment
 
     
     if ~S.debug
