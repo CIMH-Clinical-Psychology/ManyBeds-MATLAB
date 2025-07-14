@@ -16,9 +16,10 @@ function [RES, S] = MBEDS_sleepstim
 
     %% General Study Information
     C = MBEDS_LabConfig;
-    S = struct;                                     % contains general study information
-    S.location = C.location;                                    % adapt according to location
-    S.lab_id = C.lab_id;                                           % adapt according to location (LAB ID)
+    S = struct;                  % contains general study information
+    S.location = C.location;     % adapt according to location
+    S.lab_id = C.lab_id;         % adapt according to location (LAB ID)
+    S.lpt_hex = C.lpt_hex;       % parallel port to use
 
     fprintf("ManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
     S.subnr = input("Participant ID: ", "s");   % enter participant ID

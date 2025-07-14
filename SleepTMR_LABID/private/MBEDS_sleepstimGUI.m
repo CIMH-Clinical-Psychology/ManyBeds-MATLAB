@@ -7,7 +7,7 @@ addpath(projectRoot);
 %% Initialize experiment
 RES = struct;                                   % contains results of current subject
 
-lpt_hex = c.lpt_hex; % LPT1        Address of parallel port    ADJUST TO LOCAL SITUATION
+% lpt_hex = c.lpt_hex; % LPT1        Address of parallel port    ADJUST TO LOCAL SITUATION
 % lpt_hex  = '4FF8'; % LPT2
 
 %% Create UI
@@ -180,7 +180,7 @@ if (S.debug == false)
     if( ioStatus ~= 0 )
        error('inp/outp installation failed');
     end
-    lpt_address = hex2dec(lpt_hex);
+    lpt_address = hex2dec(S.lpt_hex);
 end
     
 %% prepare audiobuffers
