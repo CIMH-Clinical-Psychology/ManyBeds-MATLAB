@@ -12,11 +12,12 @@ function [RES, S] = MBEDS_SART
     %% General Study Information
     C = MBEDS_LabConfig;
     S = struct;        
-    S.study = "SART";
     S.location = C.location;                                    
     S.lab_id = C.lab_id; 
     S.language = C.language;
     S.lpt_hex = C.lpt_hex;   % parallel port for EEG triggers 
+    S.debug = C.debug_mode;
+    S.study = "SART";
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%
     % change per participants
@@ -24,9 +25,10 @@ function [RES, S] = MBEDS_SART
     S.soundVolume = 0.3;
     %%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    S.debug = C.debug_mode;
-    warning('The DEBUG flag has been set in the config file. Please remove before running the study')
-
+    if S.debug
+         warning('The DEBUG flag has been set in the config file. Please remove before running the study')
+    end
+    
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
     S.subnr = input("Participant ID: ", "s");
     S.subid = sprintf("%s_%s", S.lab_id, S.subnr);
