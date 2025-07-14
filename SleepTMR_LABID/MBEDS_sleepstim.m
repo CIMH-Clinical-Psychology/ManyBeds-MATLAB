@@ -27,15 +27,14 @@ function [RES, S] = MBEDS_sleepstim
     S.stimdelay = 5;        % seconds between stimulus presentations
     [S.audio_device_id, S.audio_fs] = chooseAudioOutputDevice();
 
-    % debug mode will disable sending EEG triggers
+    % debug mode will disable sending EEG triggers and send debug messages instead
     S.debug = C.debug_mode;     % MUST BE false during experiment
 
-    
-    if ~S.debug
-        S.minsleepdur = 45;     % minutes before experiment can be stopped
-    else
+    if S.debug
         warning('Debug mode is still enabled, disable in MBEDS_sleepstim.m ~line 21')
         S.minsleepdur = 1;     % minutes before experiment can be stopped
+    else
+        S.minsleepdur = 45;     % minutes before experiment can be stopped
     end
 
     currpath = fileparts(mfilename('fullpath'));                            % currpath: folder should contain Results and SleepSounds  

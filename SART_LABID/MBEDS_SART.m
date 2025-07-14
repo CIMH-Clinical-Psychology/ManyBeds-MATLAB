@@ -1,5 +1,4 @@
 function [RES, S] = MBEDS_SART
-    DEBUG = false;  % debug flag, set to false for real experiment
     KbName('UnifyKeyNames');
 
     cleanupObj = onCleanup(@() cleanUp());  % remove screen and audio playback in case of crash
@@ -18,10 +17,8 @@ function [RES, S] = MBEDS_SART
     S.language = C.language;
     S.lpt_hex = C.lpt_hex;   % parallel port for EEG triggers 
 
+    S.debug = C.debug_mode;
     S.study = "SART";
-
-    S.usetrigger = C.usetrigger_SART; % set to true to use parallel port for EEG triggers
-
 
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
     S.subnr = input("Participant ID: ", "s");
@@ -65,10 +62,6 @@ function [RES, S] = MBEDS_SART
     S.ntrials = length(stimulus_control);
     S.breaks = zeros(S.ntrials,1);
     S.breaks(168) = 1;
-
-    if ~S.usetrigger
-        warning('Will NOT send triggers, S.usetrigger = false')
-    end
 
     %% read in audiofiles
     % read in the participant's anticlustered order and sound list
@@ -153,8 +146,7 @@ function [RES, S] = MBEDS_SART
     tState.nIds                 = numel(sound_ids_subject);
     tState.order                = sound_ids_subject(randperm(tState.nIds)); % initial shuffle
     tState.is_training          = S.train;  % disable cueing for training
-    tState.DEBUG = DEBUG;
-    tState.usetrigger = S.usetrigger;
+    tState.DEBUG = S.debug;
 
     % define a cue timer that runs a loop inside.
     % we're basically pretending that the timer is a thread.
@@ -168,10 +160,10 @@ function [RES, S] = MBEDS_SART
     screenNumber = max(Screen('Screens')); % Use the current monitor
     white = WhiteIndex(screenNumber);
     black = BlackIndex(screenNumber);
-    if C.debug_mode
+    if S.debug
         Screen('Preference', 'VisualDebugLevel', 3);
         Screen('Preference', 'SkipSyncTests', 0);
-        warning('The DEBUG flag has been set in the beginning of the file. Please remove before running the study')
+        warning('The DEBUG flag has been set in the config file. Please remove before running the study')
         PsychDebugWindowConfiguration(0, 0.8)
         debug_rect = [1920 100 3000 800]; % Adjust as needed=
         [win, rect] = Screen('OpenWindow', screenNumber, black, debug_rect);
@@ -198,7 +190,7 @@ function [RES, S] = MBEDS_SART
     rng('shuffle'); % Random seed based on current time
 
     % prepare trigger ports
-    if (S.usetrigger == true)
+    if ~S.debug
         triggerWriteDelay = 0.005;  % Trigger duration in s
 
         ioObj = io64;
@@ -518,12 +510,10 @@ function [RES, S] = MBEDS_SART
     end
 
     function sendTrigger(trigger)
-        if C.debug_mode
+        if S.debug
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
-        end
-
-        if S.usetrigger == true
+        else
             io64(ioObj, lpt_address, trigger);
             WaitSecs(triggerWriteDelay);
             io64(ioObj, lpt_address, 0);
@@ -589,9 +579,7 @@ function playCues(timerObj, ~)
         if self.DEBUG
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
-        end
-
-        if self.usetrigger == true
+        else
             io64(ioObj, lpt_address, trigger);
             WaitSecs(triggerWriteDelay);
             io64(ioObj, lpt_address, 0);

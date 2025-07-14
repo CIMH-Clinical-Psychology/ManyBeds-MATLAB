@@ -173,8 +173,9 @@ t = timer('ExecutionMode', 'fixedRate', ...
 %% prepare trigger ports
 triggerWriteDelay = 0.005;  % Trigger duration in s
 
-if (S.debug == false)
-
+if S.debug
+    warning('DEBUG_MODE active, will not send triggers')
+else
     ioObj = io64;
     ioStatus = io64(ioObj);
     if( ioStatus ~= 0 )
@@ -532,9 +533,7 @@ end
         if S.debug
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
-        end
-    
-        if S.debug == false
+        else
             io64(ioObj, lpt_address, trigger);
             WaitSecs(triggerWriteDelay);
             io64(ioObj, lpt_address, 0);

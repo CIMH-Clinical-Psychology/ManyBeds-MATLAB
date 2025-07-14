@@ -4,8 +4,8 @@ function C = MBEDS_LabConfig
     % MBEDS_sleepstim and MBEDS_SART scripts.
     
     % 1) lab ID
-    C.location = "C99_Mannheim";         % your lab ID + location
-    C.lab_id   = "C99";                  % your lab ID       
+    C.location = "C08_Mannheim";         % your lab ID + location
+    C.lab_id   = "C08";                  % your lab ID       
     
     % 2) language of SART
     C.language = "en";            % options: 'de', 'en', 'fr', 'cn', 'jp'
@@ -13,8 +13,10 @@ function C = MBEDS_LabConfig
     % 3) parallel port hex address
     C.lpt_hex = '3FF8'; 
 
-
     % 4) debug mode
     C.debug_mode = true;       % set to false to send triggers
-    
+
+    % make sure no field is missing
+    required = ["location","lab_id","lpt_hex","debug_mode"];
+    assert(all(isfield(C, required)), 'Config file missing fields');
 end
