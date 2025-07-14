@@ -17,6 +17,6 @@ function C = MBEDS_LabConfig
     C.debug_mode = true;       % set to false to send triggers
 
     % make sure no field is missing
-    required = ["location","lab_id","lpt_hex","debug_mode"];
+    required = ["location","lab_id", "language", "lpt_hex","debug_mode"];
     assert(all(isfield(C, required)), 'Config file missing fields');
 end
