@@ -1,4 +1,10 @@
 function [RES, S] = MBEDS_SART
+available_ports = serialportlist("all");
+disp("Available serial ports:")
+disp(available_ports)
+
+    Screen('Preference', 'SkipSyncTests', 1);
+
     KbName('UnifyKeyNames');
 
     cleanupObj = onCleanup(@() cleanUp());  % remove screen and audio playback in case of crash
@@ -15,14 +21,16 @@ function [RES, S] = MBEDS_SART
     S.location = C.location;                                    
     S.lab_id = C.lab_id; 
     S.language = C.language;
-    S.lpt_hex = C.lpt_hex;   % parallel port for EEG triggers 
+   % S.lpt_hex = C.lpt_hex;   % parallel port for EEG triggers 
+    S.trigger_port = serialport("COM3", 9600);  % Adjust COM port if needed
+    S.trigger_duration = 0.01;  % Trigger pulse duration
     S.debug = C.debug_mode;
     S.study = "SART";
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%
     % change per participants
-    S.backgroundVolume = 0.8;
-    S.soundVolume = 0.3;
+    S.backgroundVolume = 0.2;
+    S.soundVolume = 0.5;
     %%%%%%%%%%%%%%%%%%%%%%%%%%
 
     if S.debug
@@ -32,7 +40,7 @@ function [RES, S] = MBEDS_SART
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
     S.subnr = input("Participant ID: ", "s");
     S.subid = sprintf("%s_%s", S.lab_id, S.subnr);
-    S.start_cues_after = 5;  % minutes after which the playing of the cues should start
+    S.start_cues_after = 1;  % minutes after which the playing of the cues should start
     S.stimdelay = 5;         % seconds between stimulus  presentations
     S.max_repetitions = 3;   % repeat all stimuli maximally 3 rounds
     S.stim_dur = 0.450; %Stimulus Duration
@@ -153,6 +161,10 @@ function [RES, S] = MBEDS_SART
     tState.order                = sound_ids_subject(randperm(tState.nIds)); % initial shuffle
     tState.is_training          = S.train;  % disable cueing for training
     tState.DEBUG = S.debug;
+    
+    tState.trigger_port = S.trigger_port;
+    tState.trigger_duration = S.trigger_duration;
+
 
     % define a cue timer that runs a loop inside.
     % we're basically pretending that the timer is a thread.
@@ -175,6 +187,10 @@ function [RES, S] = MBEDS_SART
         [win, rect] = Screen('OpenWindow', screenNumber, black, debug_rect);
     else
         clear Screen
+        Screen('Preference', 'SkipSyncTests', 0);
+        screenNumber = max(Screen('Screens')); % Use the current monitor
+        white = WhiteIndex(screenNumber);
+        black = BlackIndex(screenNumber);
         [win, rect] = Screen('OpenWindow', screenNumber, black); % Open full-screen window
     end
     S.screensize = rect;
@@ -199,12 +215,9 @@ function [RES, S] = MBEDS_SART
     if ~S.debug
         triggerWriteDelay = 0.005;  % Trigger duration in s
 
-        ioObj = io64;
-        ioStatus = io64(ioObj);
-        if( ioStatus ~= 0 )
-            error('inp/outp installation failed');
-        end
-        lpt_address = hex2dec(S.lpt_hex);
+    % Setup TriggerBox serial port
+    S.trigger_port = serialport("COM3", 9600);  % Adjust COM port if needed
+    S.trigger_duration = 0.01;  % Trigger pulse duration
     end
 
     %% prepare logfile
@@ -519,11 +532,14 @@ function [RES, S] = MBEDS_SART
         if S.debug
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
-        else
-            io64(ioObj, lpt_address, trigger);
-            WaitSecs(triggerWriteDelay);
-            io64(ioObj, lpt_address, 0);
         end
+        if trigger <= 0 || trigger > 255
+            warning('Trigger value %d out of bounds (must be 1-255)', trigger);
+            return
+        end
+        write(S.trigger_port, trigger, "uint8");
+        WaitSecs(S.trigger_duration);
+        write(S.trigger_port, 0, "uint8");
     end   
 end
 
@@ -579,63 +595,36 @@ function cleanUp()
     end
 end
 
-function playCues(timerObj, ~)
-
-    function sendTrigger(trigger)
-        if self.DEBUG
-            disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
-            return
-        else
-            io64(ioObj, lpt_address, trigger);
-            WaitSecs(triggerWriteDelay);
-            io64(ioObj, lpt_address, 0);
-        end
-    end   
-
-    % this timer object will be called every 5 seconds and play a sound
-    % or not, depending on the current state of UserData
-    self  = get(timerObj, 'UserData');  % simulate Python behaviour for familiarity
+    function playCues(timerObj, ~)
+    self  = get(timerObj, 'UserData');
     curr_time = GetSecs();
 
-    % no cueing during training
     if self.is_training
         return
     end
-
-    % silently stop stimulation if max repetitions are reached
     if self.repetitions >= self.max_repetitions
         return
     end
-
-    % if we are in the initial buffer phase, don't play either
-    if (curr_time - (self.t0+self.start_cues_after)) < -0.2 % account for small offsets
+    if (curr_time - (self.t0 + self.start_cues_after)) < -0.2
         printf(self.logfile, '[%9.3f] NO STIM ; buffer phase still active for %3.0f seconds\n', ...
-                  curr_time-self.t0, -(curr_time - (self.t0+self.start_cues_after)));
+              curr_time - self.t0, -(curr_time - (self.t0 + self.start_cues_after)));
         return;
     end
 
-    % increment stimulus counter
     self.countstim = self.countstim + 1;
-
-    % if we’ve walked through the whole list, shuffle next list
     if self.countstim > self.nIds
         self.countstim    = 1;
         self.repetitions  = self.repetitions + 1;
-        % stop after three repetitions
         if self.repetitions >= self.max_repetitions
             printf(self.logfile, '[%9.3f] NO STIM ; max repetitions reached, stop cueing\n', ...
-                    curr_time-self.t0);
-            stop(timerObj);  % slightly useless, as it will be restarted again after each probe
-            
+                    curr_time - self.t0);
+            stop(timerObj);
             return;
         end
-        % reshuffle for next pass
         self.order = self.sound_ids_subject(randperm(self.nIds));
     end
 
-    % pick and play
     idx = self.order(self.countstim);
-
     sendTrigger(100 + idx);
 
     stim = self.stim_dict(idx);
@@ -645,9 +634,24 @@ function playCues(timerObj, ~)
     printf(self.logfile, '[%9.3f] STIM %02d (%s) - %d repetitions, cue count %03d\n', ...
             lastStim - self.t0, idx, stim{1}, self.repetitions, self.countstim);
 
-    % save updated counters/timestamps
     set(timerObj, 'UserData', self);
+
+    %% nested trigger function
+    function sendTrigger(trigger)
+        if self.DEBUG
+            disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
+            return
+        end
+        if trigger <= 0 || trigger > 255
+            warning('Trigger value %d out of bounds (must be 1-255)', trigger);
+            return
+        end
+        write(self.trigger_port, trigger, "uint8");
+        WaitSecs(0.01);  % trigger duration
+        write(self.trigger_port, 0, "uint8");
+    end
 end
+
 
 
 function value = drawNormal(mean, sd)
