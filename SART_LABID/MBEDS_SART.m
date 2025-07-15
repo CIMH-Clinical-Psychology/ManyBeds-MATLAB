@@ -1,7 +1,4 @@
 function [RES, S] = MBEDS_SART
-available_ports = serialportlist("all");
-disp("Available serial ports:")
-disp(available_ports)
 
     Screen('Preference', 'SkipSyncTests', 1);
 
@@ -21,9 +18,10 @@ disp(available_ports)
     S.location = C.location;                                    
     S.lab_id = C.lab_id; 
     S.language = C.language;
-   % S.lpt_hex = C.lpt_hex;   % parallel port for EEG triggers 
-    S.trigger_port = serialport("COM3", 9600);  % Adjust COM port if needed
-    S.trigger_duration = 0.01;  % Trigger pulse duration
+    S.trigger_interface = C.trigger_interface;
+    S.trigger_port = C.trigger_port;
+    S.trigger_duration = C.trigger_duration;
+    S.baudrate = C.baudrate; % only used in case of COM port
     S.debug = C.debug_mode;
     S.study = "SART";
 
@@ -35,6 +33,22 @@ disp(available_ports)
 
     if S.debug
          warning('The DEBUG flag has been set in the config file. Please remove before running the study')
+    else
+        if strcmp(S.trigger_interface, "serial")
+            % using a COM serial port
+            S.trigger_handle = serialport(S.trigger_port, S.baudrate);
+            write(S.trigger_handle, 0, 'uint8');  % reset ports at beginning
+        elseif strcmp(S.trigger_interface, "parallel")
+            % using a parallel port requires io64
+            S.trigger_handle = io64;
+            status = io64(S.trigger_handle);
+            if(status ~= 0)
+                error('inp/outp installation failed');
+            end
+            S.trigger_port = hex2dec(S.trigger_port);
+        else
+            warning('Unknown trigger_interface in config')
+        end
     end
     
     fprintf("ManyBeds - Lab %s (%s) - %s\n", S.location, S.lab_id, S.study);
@@ -43,7 +57,7 @@ disp(available_ports)
     S.start_cues_after = 1;  % minutes after which the playing of the cues should start
     S.stimdelay = 5;         % seconds between stimulus  presentations
     S.max_repetitions = 3;   % repeat all stimuli maximally 3 rounds
-    S.stim_dur = 0.450; %Stimulus Duration
+    S.stim_dur = 0.450;      % Stimulus Duration
     S.mask_dur_mean = 4.550; % Mask duration mean seconds      % is 4.450 in OpenSesame, but Wamsley 2023 says 5 s SOA
     S.mask_dur_sd = 1;       % standard deviation to sample within, will be truncated above/bellow
     S.key_pause = 0.5;
@@ -162,9 +176,12 @@ disp(available_ports)
     tState.is_training          = S.train;  % disable cueing for training
     tState.DEBUG = S.debug;
     
-    tState.trigger_port = S.trigger_port;
-    tState.trigger_duration = S.trigger_duration;
-
+    if ~S.debug
+        tState.trigger_handle = S.trigger_handle;
+        tState.trigger_port = S.trigger_port;
+        tState.trigger_duration = S.trigger_duration;
+        tState.trigger_interface = S.trigger_interface;
+    end
 
     % define a cue timer that runs a loop inside.
     % we're basically pretending that the timer is a thread.
@@ -178,19 +195,18 @@ disp(available_ports)
     screenNumber = max(Screen('Screens')); % Use the current monitor
     white = WhiteIndex(screenNumber);
     black = BlackIndex(screenNumber);
+
     if S.debug
         Screen('Preference', 'VisualDebugLevel', 3);
         Screen('Preference', 'SkipSyncTests', 0);
         warning('The DEBUG flag has been set in the config file. Please remove before running the study')
         PsychDebugWindowConfiguration(0, 0.8)
-        debug_rect = [1920 100 3000 800]; % Adjust as needed=
-        [win, rect] = Screen('OpenWindow', screenNumber, black, debug_rect);
+        r = Screen('Rect', screenNumber);
+        debug_rect = [0 0 round(r(3)*0.5) round(r(4)*0.5)];  % display 50% size
+        [win, rect] = Screen('OpenWindow', screenNumber, 0, debug_rect);
     else
         clear Screen
         Screen('Preference', 'SkipSyncTests', 0);
-        screenNumber = max(Screen('Screens')); % Use the current monitor
-        white = WhiteIndex(screenNumber);
-        black = BlackIndex(screenNumber);
         [win, rect] = Screen('OpenWindow', screenNumber, black); % Open full-screen window
     end
     S.screensize = rect;
@@ -210,15 +226,6 @@ disp(available_ports)
 
     %% Initialization
     rng('shuffle'); % Random seed based on current time
-
-    % prepare trigger ports
-    if ~S.debug
-        triggerWriteDelay = 0.005;  % Trigger duration in s
-
-    % Setup TriggerBox serial port
-    S.trigger_port = serialport("COM3", 9600);  % Adjust COM port if needed
-    S.trigger_duration = 0.01;  % Trigger pulse duration
-    end
 
     %% prepare logfile
     %% 
@@ -537,9 +544,16 @@ disp(available_ports)
             warning('Trigger value %d out of bounds (must be 1-255)', trigger);
             return
         end
-        write(S.trigger_port, trigger, "uint8");
-        WaitSecs(S.trigger_duration);
-        write(S.trigger_port, 0, "uint8");
+        
+        if strcmp(S.trigger_interface, "serial")
+            write(S.trigger_handle, trigger, "uint8");
+            WaitSecs(S.trigger_duration);
+            write(S.trigger_handle, 0, "uint8");
+        elseif strcmp(S.trigger_interface, "parallel")
+            io64(S.trigger_handle, S.trigger_port, trigger);
+            WaitSecs(S.trigger_duration);
+            io64(S.trigger_handle, S.trigger_port, 0);
+        end
     end   
 end
 
@@ -593,9 +607,10 @@ function cleanUp()
         stop(allTimers);         % stop them running
         delete(allTimers);       % delete them from memory
     end
+    clear S.trigger_handle
 end
 
-    function playCues(timerObj, ~)
+function playCues(timerObj, ~)
     self  = get(timerObj, 'UserData');
     curr_time = GetSecs();
 
@@ -646,9 +661,15 @@ end
             warning('Trigger value %d out of bounds (must be 1-255)', trigger);
             return
         end
-        write(self.trigger_port, trigger, "uint8");
-        WaitSecs(0.01);  % trigger duration
-        write(self.trigger_port, 0, "uint8");
+        if strcmp(self.trigger_interface, "serial")
+            write(self.trigger_handle, trigger, "uint8");
+            WaitSecs(self.trigger_duration);
+            write(self.trigger_handle, 0, "uint8");
+        elseif strcmp(self.trigger_interface, "parallel")
+            io64(self.trigger_handle, self.trigger_port, trigger);
+            WaitSecs(self.trigger_duration);
+            io64(self.trigger_handle, S.trigger_port, 0);
+        end
     end
 end
 
@@ -721,3 +742,5 @@ function out = translate(key)
         out = key;
     end
 end
+
+
