@@ -171,17 +171,23 @@ t = timer('ExecutionMode', 'fixedRate', ...
     'TimerFcn', @(~,~) updateLabels(timerLabel));
 
 %% prepare trigger ports
-triggerWriteDelay = 0.005;  % Trigger duration in s
-
 if S.debug
     warning('DEBUG_MODE active, will not send triggers')
 else
-    ioObj = io64;
-    ioStatus = io64(ioObj);
-    if( ioStatus ~= 0 )
-       error('inp/outp installation failed');
+    if strcmp(S.trigger_interface, "serial")
+        % define trigger port
+        S.trigger_handle = serialport(S.trigger_port, S.baudrate);
+        write(S.trigger_handle, 0, 'uint8');  % reset ports at beginning
+    elseif strcmp(S.trigger_interface, "parallel")
+        S.trigger_handle = io64;
+        status = io64(S.trigger_handle);
+        if(status ~= 0)
+            error('inp/outp installation failed');
+        end
+        S.trigger_port = hex2dec(S.trigger_port);
+    else
+        warning('No valid trigger interface set in config');
     end
-    lpt_address = hex2dec(S.lpt_hex);
 end
     
 %% prepare audiobuffers
@@ -296,7 +302,7 @@ end
         printf(logfile, '[%9.3f] STARTSTIM\r\n', GetSecs-t0);
 
         sendTrigger(251)
-
+        WaitSecs(0.1)  % wait to prevent overlapping triggers
         testSoundVolumeBtn.Enable = 'off';
         start_snd_btn.Enable = 'off';
         start_snd_btn.Value = 1;
@@ -533,10 +539,20 @@ end
         if S.debug
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
-        else
-            io64(ioObj, lpt_address, trigger);
-            WaitSecs(triggerWriteDelay);
-            io64(ioObj, lpt_address, 0);
+        end
+        if trigger <= 0 || trigger > 255
+            warning('Trigger value %d out of bounds (must be 1-255)', trigger);
+            return
+        end
+        
+        if strcmp(S.trigger_interface, "serial")
+            write(S.trigger_handle, trigger, "uint8");
+            WaitSecs(S.trigger_duration);
+            write(S.trigger_handle, 0, "uint8");
+        elseif strcmp(S.trigger_interface, "parallel")
+            io64(S.trigger_handle, S.trigger_port, trigger);
+            WaitSecs(S.trigger_duration);
+            io64(S.trigger_handle, S.trigger_port, 0);
         end
     end   
 end

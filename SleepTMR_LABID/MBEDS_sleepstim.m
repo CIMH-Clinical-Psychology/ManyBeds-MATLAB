@@ -19,7 +19,10 @@ function [RES, S] = MBEDS_sleepstim
     S = struct;                  % contains general study information
     S.location = C.location;     % adapt according to location
     S.lab_id = C.lab_id;         % adapt according to location (LAB ID)
-    S.lpt_hex = C.lpt_hex;       % parallel port to use
+    S.trigger_interface = C.trigger_interface;
+    S.trigger_port = C.trigger_port;
+    S.trigger_duration = C.trigger_duration;
+    S.baudrate = C.baudrate;
 
     fprintf("ManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
     S.subnr = input("Participant ID: ", "s");   % enter participant ID
@@ -31,7 +34,7 @@ function [RES, S] = MBEDS_sleepstim
     S.debug = C.debug_mode;     % MUST BE false during experiment
 
     if S.debug
-        warning('Debug mode is still enabled, disable in MBEDS_sleepstim.m ~line 21')
+        warning('Debug mode is still enabled, disable config file')
         S.minsleepdur = 1;     % minutes before experiment can be stopped
     else
         S.minsleepdur = 45;     % minutes before experiment can be stopped
