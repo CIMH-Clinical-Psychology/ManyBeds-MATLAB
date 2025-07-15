@@ -11,7 +11,7 @@ function [RES, S] = MBEDS_SART
 
     projectRoot = fileparts(fileparts(mfilename('fullpath')));
     addpath(projectRoot);
-    
+
     %% General Study Information
     C = MBEDS_LabConfig;
     S = struct;        
@@ -668,7 +668,7 @@ function playCues(timerObj, ~)
         elseif strcmp(self.trigger_interface, "parallel")
             io64(self.trigger_handle, self.trigger_port, trigger);
             WaitSecs(self.trigger_duration);
-            io64(self.trigger_handle, S.trigger_port, 0);
+            io64(self.trigger_handle, self.trigger_port, 0);
         end
     end
 end

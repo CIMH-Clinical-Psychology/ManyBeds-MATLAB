@@ -23,10 +23,18 @@ function C = MBEDS_LabConfig
     % 4) debug mode
     C.debug_mode = true;       % set to false to send triggers
 
+    %%%%%%%%%%%%%%%%%%%%%%%
+    %%%%% sanity checks %%%
     % make sure no field is missing
     required = ["location","lab_id", "language", "debug_mode",  ...
                 "trigger_interface", "trigger_duration", "trigger_port"];
     assert(all(isfield(C, required)), 'Config file missing fields');
+    if C.debug_mode
+          dlg = questdlg('DEBUG mode is ON – triggers will NOT be sent.  Continue?', ...
+                   'Debug mode', 'Continue', 'Abort', 'Abort');
+    if ~strcmp(dlg,'Continue'); error('Run aborted by operator'); end
+    end
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
