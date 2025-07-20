@@ -1,6 +1,5 @@
 %% CONFIG
 function C = MBEDS_LabConfig
-    list_serial_ports()
 
     % lab-specific configuration for ManyBeds MATLAB scripts
     % The information provided here will be used in both the
@@ -32,8 +31,12 @@ function C = MBEDS_LabConfig
     if C.debug_mode
           dlg = questdlg('DEBUG mode is ON – triggers will NOT be sent.  Continue?', ...
                    'Debug mode', 'Continue', 'Abort', 'Abort');
-    if ~strcmp(dlg,'Continue'); error('Run aborted by operator'); end
+          if ~strcmp(dlg,'Continue'); error('Run aborted by operator'); end
     end
+    if strcmp(C.trigger_interface, 'serial')  & ~C.debug_mode
+            list_serial_ports()
+    end
+
 
 end
 

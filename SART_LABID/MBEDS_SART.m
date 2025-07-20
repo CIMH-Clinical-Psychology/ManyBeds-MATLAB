@@ -200,9 +200,9 @@ function [RES, S] = MBEDS_SART
         Screen('Preference', 'VisualDebugLevel', 3);
         Screen('Preference', 'SkipSyncTests', 0);
         warning('The DEBUG flag has been set in the config file. Please remove before running the study')
-        PsychDebugWindowConfiguration(0, 0.8)
+        PsychDebugWindowConfiguration(0, 0.6)
         r = Screen('Rect', screenNumber);
-        debug_rect = [0 0 round(r(3)*0.5) round(r(4)*0.5)];  % display 50% size
+        debug_rect = [10 10 round(r(4)*0.5) round(r(3)*0.5)];  % display 50% size
         [win, rect] = Screen('OpenWindow', screenNumber, 0, debug_rect);
     else
         clear Screen

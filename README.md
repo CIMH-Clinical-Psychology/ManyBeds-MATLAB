@@ -23,19 +23,17 @@ the following triggers are sent:
 | **254**       | Break screen starts                                  |
 | **255**       | Break finished / task resumes                        |
 
-
-
 ## Cueing
 
 | trigger id | description                                               |
-| ---------: | --------------------------------------------------------- |
+| ----------:| --------------------------------------------------------- |
 | **1 – 50** | Play auditory cue *s1 … s50* (main TMR stimuli)           |
-|     **99** | Play *baseline* stimulus (ID 99) during normal cueing     |
-|    **150** | Background-noise test ON                                  |
-|    **151** | Background-noise test OFF                                 |
-|    **199** | “Test Sound Volume” trial (baseline stimulus played once) |
-|    **250** | **Stop** stimulation series (also sent at experiment end) |
-|    **251** | **Start** stimulation series                              |
-|    **253** | Experiment finished (final marker)                        |
-|    **254** | Lights-off / sleep period begins                          |
-|    **255** | Initial experiment-start marker                           |
+| **99**     | Play *baseline* stimulus (ID 99) during normal cueing     |
+| **150**    | Background-noise test ON                                  |
+| **151**    | Background-noise test OFF                                 |
+| **199**    | “Test Sound Volume” trial (baseline stimulus played once) |
+| **250**    | **Stop** stimulation series (also sent at experiment end) |
+| **251**    | **Start** stimulation series                              |
+| **253**    | Experiment finished (final marker)                        |
+| **254**    | Lights-off / sleep period begins                          |
+| **255**    | Initial experiment-start marker                           |
