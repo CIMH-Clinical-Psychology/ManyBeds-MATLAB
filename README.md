@@ -6,13 +6,11 @@ This code runs with psychtoolbox [Release 3.0.19.17 ](https://github.com/Psychto
 
 Read here how to install: [Psychtoolbox-3 - Download, Installation, and Update](http://psychtoolbox.org/download.html)
 
-
-
 #### Version history
 
 25.08.2025 v1.0 - initial versioning start 
 
-26.08.2025 v1.1 - change white noise to pink noise, add as parameter
+26.08.2025 v1.1 - change white noise to pink noise, add as parameter, fix char<->string issues
 
 ## SART
 
