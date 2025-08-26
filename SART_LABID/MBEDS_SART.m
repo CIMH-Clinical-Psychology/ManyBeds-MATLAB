@@ -23,6 +23,8 @@ function [RES, S] = MBEDS_SART
     S.trigger_duration = C.trigger_duration;
     S.baudrate = C.baudrate; % only used in case of COM port
     S.debug = C.debug_mode;
+    S.noise_type = C.noise_type;
+
     S.study = "SART";
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -151,7 +153,7 @@ function [RES, S] = MBEDS_SART
     PsychPortAudio('Volume', paBGDeviceHandle , S.backgroundVolume);
     PsychPortAudio('Volume', paSTIMDeviceHandle , S.soundVolume);
 
-    backgroundnoise = audioread(fullfile('Stimuli', 'noise.mp3'))';
+    backgroundnoise = audioread(fullfile('Stimuli', "noise_" + S.noise_type + ".mp3"))';
     if size(backgroundnoise,1)==1
         backgroundnoise = repmat(backgroundnoise,2,1);
     end

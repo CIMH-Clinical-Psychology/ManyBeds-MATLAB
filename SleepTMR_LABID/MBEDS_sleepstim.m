@@ -23,6 +23,7 @@ function [RES, S] = MBEDS_sleepstim
     S.trigger_port = C.trigger_port;
     S.trigger_duration = C.trigger_duration;
     S.baudrate = C.baudrate;
+    S.noise_type = C.noise_type;
 
     fprintf("ManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
     S.subnr = input("Participant ID: ", "s");   % enter participant ID
@@ -104,8 +105,8 @@ function [RES, S] = MBEDS_sleepstim
     S.sound_ids_subject = S.sound_ids_subject(randperm(numel(S.sound_ids_subject))); % intial shuffle
     
     %% read in background noise 
-    backgroundnoise_name = 'noise';
-    backgroundnoise = audioread(fullfile(soundFilePath, [backgroundnoise_name '.mp3']))';
+    backgroundnoise_name = "noise_" + S.noise_type + ".mp3";
+    backgroundnoise = audioread(fullfile(soundFilePath, backgroundnoise_name))';
     if size(backgroundnoise,1)==1
         backgroundnoise = repmat(backgroundnoise,2,1);
     end
