@@ -259,7 +259,7 @@ function [RES, S] = MBEDS_SART
         %     'It is important that you respond as fast and accurately as possible.\n\n\n\n' ...
         %     'Press the spacebar to see an example…'                ];
 
-        DrawFormattedText(win, instructions, 'center', 'center', white);
+        DrawFormattedText(win, char(instructions), 'center', 'center', white);
         Screen('Flip', win);
         waitForKeypress('space');
 
@@ -275,7 +275,7 @@ function [RES, S] = MBEDS_SART
         WaitSecs(drawNormal(S.mask_dur_mean, S.mask_dur_sd));
         % 'Press SPACE to continue'
         text = translate("space_continue");
-        DrawFormattedText(win, text, 'center', 'center', white);
+        DrawFormattedText(win, char(text), 'center', 'center', white);
         Screen('Flip', win);
         waitForKeypress('space');
 
@@ -286,19 +286,20 @@ function [RES, S] = MBEDS_SART
         end
         pause(S.key_pause);
         % 'Practice Trial\n\nPress SPACE when ready...'
-        text = [translate('practice_trial'), '\n\n', translate('space_start')];
-        DrawFormattedText(win, text, 'center', 'center', white);
+        % HA HA HA, JULI FUCKED UP YOUR CODE
+        text = translate("practice_trial") + "\n\n" + translate("space_start");
+        DrawFormattedText(win, char(text), 'center', 'center', white);
         Screen('Flip', win);
         waitForKeypress('space'); 
     else
         % Now follows the number task \n\n press space to start
-        text = [translate("number_task"), '\n\n', translate('space_start')];
-        DrawFormattedText(win, text, 'center', 'center', white);
+        text = translate("number_task") + "\n\n" + translate("space_start");
+        DrawFormattedText(win, char(text), 'center', 'center', white);
         Screen('Flip', win);
         waitForKeypress('space'); 
         % 'The task will begin in 10 seconds...'
-        text = translate('task_countdown');
-        DrawFormattedText(win, text, 'center', 'center', white);
+        text = translate("task_countdown");
+        DrawFormattedText(win, char(text), 'center', 'center', white);
         Screen('Flip', win);
         pause(10);   % Does wait just 1 second in OpenSesame
     end
@@ -446,20 +447,20 @@ function [RES, S] = MBEDS_SART
             end    
             % 'Take a break\n\n '
             text = translate("break");
-            DrawFormattedText(win, text, 'center', 'center', white);     % At least 30 seconds, this was not in the original
+            DrawFormattedText(win, char(text), 'center', 'center', white);     % At least 30 seconds, this was not in the original
             tim = Screen('Flip', win);
             printf(logfile, '[%9.3f] BREAK %03d\n', tim - S.t0, i);
             pause(30);
             % 'Take a break\n\nPress SPACE when ready to continue...'
-            text = [translate("break"), "\n\n", translate("space_continue")];
-            DrawFormattedText(win, text, 'center', 'center', white);
+            text = translate("break") + "\n\n" + translate("space_continue");
+            DrawFormattedText(win, char(text), 'center', 'center', white);
             Screen('Flip', win);
             sendTrigger(254);
             waitForKeypress('space');
             sendTrigger(255);
             % The task will begin in 10 seconds...
             text = translate("task_countdown");
-            DrawFormattedText(win, text, 'center', 'center', white);
+            DrawFormattedText(win, char(text), 'center', 'center', white);
             Screen('Flip', win);
             pause(10);
             tim = displayMask;
@@ -477,7 +478,7 @@ function [RES, S] = MBEDS_SART
 
     % 'You have finished this task...'
     text = translate("finished");
-    DrawFormattedText(win, text, 'center', 'center', white);
+    DrawFormattedText(win, char(text), 'center', 'center', white);
     Screen('Flip', win);
     pause(5);
     KbWait;
@@ -525,7 +526,7 @@ function [RES, S] = MBEDS_SART
         if nargin < 2
             color = white;
         end
-        DrawFormattedText(win, num2str(num), 'center', 'center', color); 
+        DrawFormattedText(win, char(num2str(num)), 'center', 'center', color); 
         tim = Screen('Flip', win);
     end    
 
@@ -714,6 +715,8 @@ function out = translate(key)
 %TRANSLATE  Fetch localised text for KEY from Translations/translations.json
 %   Requires struct S with field S.language (e.g. 'en', 'de') in caller.
 
+    % explicit conversion to string to prevent char arrays
+    key = string(key);
     % --- determine language (default = 'en') ------------------------------
     try
         lang = lower(string(evalin('caller','S.language')));
@@ -743,6 +746,9 @@ function out = translate(key)
         warning('translate:MissingKey','Missing key "%s"; returning key.',key);
         out = key;
     end
+
+    % explicit conversion to string, to prevent accidental char creation
+    out = char(out);
 end
 
 
