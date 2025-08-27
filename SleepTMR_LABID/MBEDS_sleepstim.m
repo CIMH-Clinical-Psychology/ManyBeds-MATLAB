@@ -24,6 +24,7 @@ function [RES, S] = MBEDS_sleepstim
     S.trigger_duration = C.trigger_duration;
     S.baudrate = C.baudrate;
     S.noise_type = C.noise_type;
+    S.force_value = C.force_value;
 
     fprintf("ManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
     S.subnr = input("Participant ID: ", "s");   % enter participant ID
@@ -48,7 +49,7 @@ function [RES, S] = MBEDS_sleepstim
     
     soundFilePath = fullfile(currpath,"Stimuli");
     if ~exist(soundFilePath,"dir")
-        error("Cannot find SleepSound folder");
+        error("Cannot find Stimuli folder");
     end
     
     resultsFilePath = fullfile(currpath, "Results");

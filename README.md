@@ -26,6 +26,8 @@ the following triggers are sent:
 | **101 – 150** | Auditory cue sounds *s1–s50* (`100 + sound ID`)      |
 | **199**       | Baseline noise epoch (`100 + 99`)                    |
 | **200**       | Commission error: key-press to target digit 3        |
+| **230**       | Experiment start                                     |
+| **240**       | Experiment stopped                                   |
 | **254**       | Break screen starts                                  |
 | **255**       | Break finished / task resumes                        |
 
@@ -41,5 +43,5 @@ the following triggers are sent:
 | **250**    | **Stop** stimulation series (also sent at experiment end) |
 | **251**    | **Start** stimulation series                              |
 | **253**    | Experiment finished (final marker)                        |
-| **254**    | Lights-off / sleep period begins                          |
-| **255**    | Initial experiment-start marker                           |
+| **254**    | Lights-off / sleep period begins / startExperiment        |
+| **255**    | Initial GUI start marker                                  |

@@ -4,7 +4,11 @@ function C = MBEDS_LabConfig
     % lab-specific configuration for ManyBeds MATLAB scripts
     % The information provided here will be used in both the
     % MBEDS_sleepstim and MBEDS_SART scripts.
-    
+
+    %%%%%%%%%%%%%%%%%%%%%%%
+    % CONFIG
+    %%%%%%%%%%%%%%%%%%%%%%%
+
     % 1) lab ID
     C.location = "C99_Mannheim";   % your lab ID + location
     C.lab_id   = "C99";            % your lab ID       
@@ -21,33 +25,56 @@ function C = MBEDS_LabConfig
     C.trigger_duration = 0.01;  % Trigger pulse duration in seconds, usually 5 ms
     % baudrate in case of serial COM port (ignored for parallel ports)
     C.baudrate = 2000000;  %(2000000 is default for brainproducts Triggerbox Plus)
+    % Some systems only support specific trigger values.
+    % Set force_value=1 or any value that should be send in this case. 
+    % Then, all trigger values will be overwritten and only this value sent.
+    % Will also send 3x this trigger at the start and end of the experiment
+    % to help synchronization. Usually only needed at site C11.
+    C.force_value = false;  % false to disable, else set to an integer value
 
     % 4) debug mode
     C.debug_mode = true;       % set to false to send triggers
+
+    %%%%%%%%%%%%%%%%%%%%%%%
+    % END OF CONFIG
     %%%%%%%%%%%%%%%%%%%%%%%
 
 
-    %%%%% sanity checks %%%
+
+
+    
+
+    %%%%% sanity checks - %%%
     % make sure no field is missing
     required = ["location","lab_id", "language", "debug_mode",  ...
                 "trigger_interface", "trigger_duration", "trigger_port"];
     assert(all(isfield(C, required)), 'Config file missing fields');
+
+    % explicit conversion from char to string arrays
+    C.trigger_interface = string(C.trigger_interface);
+    C.noise_type = string(C.noise_type);
+    C.language = string(C.language);
+    C.location = string(C.location);
+    C.lab_id = string(C.lab_id);
     if C.debug_mode
           dlg = questdlg('DEBUG mode is ON – triggers will NOT be sent.  Continue?', ...
                    'Debug mode', 'Continue', 'Abort', 'Abort');
           if ~strcmp(dlg,'Continue'); error('Run aborted by operator'); end
     end
-    if strcmp(string(C.trigger_interface), "serial")  & ~C.debug_mode
+    if strcmp(C.trigger_interface, "serial")  & ~C.debug_mode
             list_serial_ports()
     end
-    if ~ ismember(string(C.trigger_interface), ["parallel", "serial"])
+    if ~ ismember(C.trigger_interface, ["parallel", "serial"])
                 error('trigger_interface must be "parallel" or "serial".');
     end
-    if ~ismember(string(C.noise_type), ["white", "pink"])
+    if ~ismember(C.noise_type, ["white", "pink"])
         error('noise_type must be "white" or "pink".');
     end
-    if ~ismember(string(C.language), ["de", "en", "fr", "cn", "jp", "nl"])
+    if ~ismember(C.language, ["de", "en", "fr", "cn", "jp", "nl"])
                 error("language must be 'de', 'en', 'fr', 'cn' or 'jp'");
+    end
+    if C.force_value>0
+        warning('C.force_value is set to a non-zero value, will only send this value')
     end
 end
 

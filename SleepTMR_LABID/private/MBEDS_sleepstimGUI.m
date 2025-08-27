@@ -264,14 +264,14 @@ while ~stopExperiment
             sendTrigger(stim_idx)
 
             % safeguard to prevent negative timestamps in log file
-            dt = lastStim - self.t0;
+            dt = stimTime - t0;
             if ~isfinite(dt) || dt < -1 
                 dt = GetSecs - self.t0;
-                printf(self.logfile, '[%9.3f] WARNING - lastStim time was %9.3f, ignoring - the next line timing might be inaccurate',   dt, lastStim);
+                printf(logfile, '[%9.3f] WARNING - lastStim time was %9.3f, ignoring - the next line timing might be inaccurate',   dt, lastStim);
             end
 
             printf(logfile, '[%9.3f] STIM %02d (%s)\r\n', dt, stim_idx, stim{1});
-            RES.stimtime = [RES.stimtime stimTime-t0];
+            RES.stimtime = [RES.stimtime dt];
         end
     end
     drawnow;
@@ -282,13 +282,21 @@ end
 %% UI Methods & Callbacks
 
     function startExperiment(~, ~)
+
         start(t);               % start GUI refresh timer
 
         fprintf('Start of experiment (lights off): %s\n', datetime);
         printf(logfile, '[%9.3f] LIGHTSOFF\r\n', GetSecs-t0);
         t1 = GetSecs;
 
-        sendTrigger(254)
+        if S.force_value
+            % send trigger 3x quickly after each other for synchronization
+            sendTrigger(254)
+            sendTrigger(254)
+            sendTrigger(254)
+        else
+            sendTrigger(254)
+        end
 
         start_exp_btn.Enable = 'off';
         start_snd_btn.Enable = 'on';
@@ -308,7 +316,7 @@ end
     end
 
     function startSoundSeries(~, ~)
-        printed_stop_message = false
+        printed_stop_message = false;
         fprintf('Start sound stimulation: %s\n', datetime);
         printf(logfile, '[%9.3f] STARTSTIM\r\n', GetSecs-t0);
 
@@ -490,13 +498,18 @@ end
     end
 
     function endExperiment(~, ~)
-        savefilename = fullfile(fileNameBase, sprintf('%s_sleepstim.mat', S.subid));
+        savefilename = string(fullfile(fileNameBase, sprintf('%s_sleepstim.mat', S.subid)));
         if isfile(savefilename)     % create a backup if file already exists
             fileprop = dir(savefilename);
-            bakdate = char(datetime(fileprop.datenum,'convertfrom','datenum','Format','yyyyMMdd_HHmmss'));
-            movefile(savefilename, [savefilename{1}(1:end-4) '_' bakdate '.bak']);
+            [pathstr, name, ~] = fileparts(savefilename);
+
+            % Generate backup name with timestamp
+            bakdate = string(datetime(fileprop.datenum,'convertfrom','datenum','Format','yyyyMMdd_HHmmss'));
+            bak_file = string(fullfile(pathstr, name + "_" + bakdate + ".bak"));
+            movefile(savefilename, bak_file);
         end
-        save(fullfile(fileNameBase, sprintf('%s_sleepstim.mat', S.subid)), "S", "RES");
+
+        save(savefilename, "S", "RES");
         stopExperiment = true;
 
         try
@@ -527,8 +540,15 @@ end
                 fclose(logfile);
                 logfile = 1;
             end
-    
-            sendTrigger(253)
+            
+            if S.force_value
+            % send trigger 3x quickly after each other for synchronization
+                sendTrigger(253)
+                sendTrigger(253)
+                sendTrigger(253)
+            else
+                sendTrigger(253)
+            end
 
             % Stop sound series and release audio buffers
             PsychPortAudio('Stop', paSTIMDeviceHandle, 1);
@@ -547,6 +567,10 @@ end
     end
 
     function sendTrigger(trigger)
+        if S.force_value
+            % overwrite individual trigger value with this value
+            trigger = S.force_value;
+        end
         if S.debug
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
@@ -555,7 +579,6 @@ end
             warning('Trigger value %d out of bounds (must be 1-255)', trigger);
             return
         end
-        
         if strcmp(S.trigger_interface, "serial")
             write(S.trigger_handle, trigger, "uint8");
             WaitSecs(S.trigger_duration);

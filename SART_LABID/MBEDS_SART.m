@@ -24,6 +24,7 @@ function [RES, S] = MBEDS_SART
     S.baudrate = C.baudrate; % only used in case of COM port
     S.debug = C.debug_mode;
     S.noise_type = C.noise_type;
+    S.force_value = C.force_value;
 
     S.study = "SART";
 
@@ -182,6 +183,7 @@ function [RES, S] = MBEDS_SART
     tState.order                = sound_ids_subject(randperm(tState.nIds)); % initial shuffle
     tState.is_training          = S.train;  % disable cueing for training
     tState.DEBUG = S.debug;
+    tState.force_value = S.force_value;
     
     if ~S.debug
         tState.trigger_handle = S.trigger_handle;
@@ -311,13 +313,23 @@ function [RES, S] = MBEDS_SART
 
     S.t0 = GetSecs;
 
+    % send start trigger
+    if S.force_value
+        sendTrigger(230);
+        sendTrigger(230);
+        sendTrigger(230);
+    else
+        sendTrigger(230);
+    end
+
+
     % only start the cueTimer after the instructions have finished
     UD = get(cueTimer,'UserData');
     UD.t0 = S.t0;  % synchronize t0 within the timer
     set(cueTimer,'UserData',UD);
     start(cueTimer);
 
-    respKeys=zeros(1,256);1
+    respKeys=zeros(1,256);
     respKeys(KbName('space'))=1;
     KbQueueCreate(-1, respKeys);
     KbQueueStart(-1);
@@ -481,6 +493,14 @@ function [RES, S] = MBEDS_SART
     save(savefile, 'S', 'RES');
     printf(logfile, '[%9.3f] END %s\n', GetSecs-S.t0, datetime);
 
+    if S.force_value
+        sendTrigger(240);
+        sendTrigger(240);
+        sendTrigger(240);
+    else
+        sendTrigger(240);
+    end
+
     % 'You have finished this task...'
     text = translate("finished");
     DrawFormattedText(win, char(text), 'center', 'center', white);
@@ -544,6 +564,10 @@ function [RES, S] = MBEDS_SART
     end
 
     function sendTrigger(trigger)
+        if S.force_value
+            % overwrite individual trigger value with this value
+            trigger = S.force_value;
+        end
         if S.debug
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
@@ -668,6 +692,10 @@ function playCues(timerObj, ~)
 
     %% nested trigger function
     function sendTrigger(trigger)
+        if self.force_value
+            % overwrite individual trigger value with this value
+            trigger = self.force_value;
+        end
         if self.DEBUG
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
