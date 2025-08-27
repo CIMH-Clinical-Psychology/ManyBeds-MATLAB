@@ -8,9 +8,15 @@ Read here how to install: [Psychtoolbox-3 - Download, Installation, and Update](
 
 #### Version history
 
-25.08.2025 v1.0 - initial versioning start 
+```
+25.08.2025 v1.0 - initial versioning start
+26.08.2025 v1.1 - change white noise to pink noise, add as parameter, fix char<->string issue
+27.08.2025 v1.2 - add exception for C11 for sending only a specific trigger. Fix path encoding string/char arrays problems
+```
 
-26.08.2025 v1.1 - change white noise to pink noise, add as parameter, fix char<->string issues
+
+
+
 
 ## SART
 
