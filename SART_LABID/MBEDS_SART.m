@@ -162,6 +162,11 @@ function [RES, S] = MBEDS_SART
     PsychPortAudio('FillBuffer', paBGDeviceHandle, backgroundnoise);
     PsychPortAudio('Start', paBGDeviceHandle, 0, 0, 1); % Start background noise on repeat
 
+    % play empty stimulus to try to align timestamps (prevent negative log times)
+    PsychPortAudio('FillBuffer', paSTIMDeviceHandle, zeros(2, 10000));
+    PsychPortAudio('Start', paSTIMDeviceHandle, 0, 0, 1); % start with 0 repetitions (no sound)
+    PsychPortAudio('Stop',  paSTIMDeviceHandle, 1);
+
     % save some more variables in our cross-thread state structure
     % we need to use a structure to pass variables between the main 5
     % function and the fake 'thread' that plays the audio
@@ -312,7 +317,7 @@ function [RES, S] = MBEDS_SART
     set(cueTimer,'UserData',UD);
     start(cueTimer);
 
-    respKeys=zeros(1,256);
+    respKeys=zeros(1,256);1
     respKeys(KbName('space'))=1;
     KbQueueCreate(-1, respKeys);
     KbQueueStart(-1);
@@ -649,8 +654,15 @@ function playCues(timerObj, ~)
     PsychPortAudio('FillBuffer', self.paSTIMDeviceHandle, stim{2});
     lastStim = PsychPortAudio('Start', self.paSTIMDeviceHandle, 1, 0, 1);
 
+    % safeguard to prevent negative timestamps in log file
+    dt = lastStim - self.t0;
+    if ~isfinite(dt) || dt < 0 
+        dt = GetSecs - self.t0;
+        printf(self.logfile, '[%9.3f] WARNING - lastStim time was %9.3f, ignoring - the next line timing might be inaccurate',   dt, lastStim);
+    end
+
     printf(self.logfile, '[%9.3f] STIM %02d (%s) - %d repetitions, cue count %03d\n', ...
-            lastStim - self.t0, idx, stim{1}, self.repetitions, self.countstim);
+            dt, idx, stim{1}, self.repetitions, self.countstim);
 
     set(timerObj, 'UserData', self);
 

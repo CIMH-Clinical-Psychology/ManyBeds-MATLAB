@@ -199,6 +199,11 @@ paSTIMDeviceHandle = PsychPortAudio('Open', S.audio_device_id, 1, 1, S.audio_fs,
 PsychPortAudio('Volume', paBGDeviceHandle , RES.backgroundVolume);
 PsychPortAudio('Volume', paSTIMDeviceHandle , RES.soundVolume);
 
+% play empty sound to try and align time stamps of the device
+PsychPortAudio('FillBuffer', paSTIMDeviceHandle, zeros(2, 10000));
+PsychPortAudio('Start', paSTIMDeviceHandle, 0, 0, 1); % start with 0 repetitions (no sound)
+PsychPortAudio('Stop',  paSTIMDeviceHandle, 1);
+
 % FillBuffer for background Noise
 PsychPortAudio('FillBuffer', paBGDeviceHandle, backgroundnoise);
 
@@ -256,10 +261,16 @@ while ~stopExperiment
 
             PsychPortAudio('FillBuffer', paSTIMDeviceHandle, stim{2});
             stimTime = PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
-
             sendTrigger(stim_idx)
 
-            printf(logfile, '[%9.3f] STIM %02d (%s)\r\n', stimTime-t0, stim_idx, stim{1});
+            % safeguard to prevent negative timestamps in log file
+            dt = lastStim - self.t0;
+            if ~isfinite(dt) || dt < -1 
+                dt = GetSecs - self.t0;
+                printf(self.logfile, '[%9.3f] WARNING - lastStim time was %9.3f, ignoring - the next line timing might be inaccurate',   dt, lastStim);
+            end
+
+            printf(logfile, '[%9.3f] STIM %02d (%s)\r\n', dt, stim_idx, stim{1});
             RES.stimtime = [RES.stimtime stimTime-t0];
         end
     end
