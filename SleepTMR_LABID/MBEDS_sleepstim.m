@@ -75,9 +75,18 @@ function [RES, S] = MBEDS_sleepstim
     if istable(sound_csv_subject)
         sound_csv_subject = table2cell(sound_csv_subject); 
     end
-    sounds_subject = sound_csv_subject(:);
-    sound_ids_subject = double(extract(string(sounds_subject),digitsPattern))';
-    
+
+    mask_cue = strcmp(sound_csv_subject(:,2), 'cue');
+    mask_ctl = strcmp(sound_csv_subject(:,2), 'control');
+    sounds_subject = sound_csv_subject(mask_cue, 1);
+    sounds_control = sound_csv_subject(mask_ctl, 1);
+    sound_ids_subject = double(extract(string(sounds_subject), digitsPattern))';
+    sound_id_control = double(extract(string(sounds_control), digitsPattern))';
+
+    if length(sound_id_control)~=1
+        error('No control sound in data column of CSV file')
+    end
+
     stim_id = table2array(sound_csv(:, 'ID'));
     stim_name = table2array(sound_csv(:, 'Name'));
     stim_name_dict = containers.Map(stim_id, stim_name);
@@ -95,8 +104,8 @@ function [RES, S] = MBEDS_sleepstim
     end
     
     %% read in baseline sound
-    baselinesound_name = 'baselinesound';
-    audio = audioread(fullfile(soundFilePath, [baselinesound_name '.wav']))';
+    baselinesound_name = char(sounds_control{1});
+    audio = audioread(fullfile(soundFilePath, baselinesound_name))';
     if size(audio,1)==1
         audio = repmat(audio,2,1);
     end
