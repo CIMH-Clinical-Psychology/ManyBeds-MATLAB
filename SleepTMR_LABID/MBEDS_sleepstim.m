@@ -25,6 +25,7 @@ function [RES, S] = MBEDS_sleepstim
     S.baudrate = C.baudrate;
     S.noise_type = C.noise_type;
     S.force_value = C.force_value;
+    S.triggers = C.triggers;
 
     fprintf("ManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
     S.subnr = input("Participant ID: ", "s");   % enter participant ID
@@ -33,9 +34,9 @@ function [RES, S] = MBEDS_sleepstim
     [S.audio_device_id, S.audio_fs] = chooseAudioOutputDevice();
 
     % debug mode will disable sending EEG triggers and send debug messages instead
-    S.debug = C.debug_mode;     % MUST BE false during experiment
+    S.debug_mode = C.debug_mode;     % MUST BE false during experiment
 
-    if S.debug
+    if S.debug_mode
         warning('Debug mode is still enabled, disable config file')
         S.minsleepdur = 1;     % minutes before experiment can be stopped
     else

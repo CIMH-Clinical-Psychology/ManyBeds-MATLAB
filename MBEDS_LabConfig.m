@@ -20,9 +20,9 @@ function C = MBEDS_LabConfig
     C.noise_type = 'pink';        % can be either white or pink
 
     % 3) trigger setup
-    C.trigger_interface = "parallel"; % parallel or serial
-    C.trigger_port = '3FF8'; % e.g. LPT hex id or COM port
-    C.trigger_duration = 0.01;  % Trigger pulse duration in seconds, usually 5 ms
+    C.trigger_interface = "serial"; % parallel or serial
+    C.trigger_port = 'COM1'; % e.g. LPT hex id or COM port
+    C.trigger_duration = 0.05;  % Trigger pulse duration in seconds, usually 5 ms
     % baudrate in case of serial COM port (ignored for parallel ports)
     C.baudrate = 2000000;  %(2000000 is default for brainproducts Triggerbox Plus)
     % Some systems only support specific trigger values.
@@ -33,18 +33,50 @@ function C = MBEDS_LabConfig
     C.force_value = false;  % false to disable, else set to an integer value
 
     % 4) debug mode
-    C.debug_mode = true;       % set to false to send triggers
+    C.debug_mode = false;       % set to false to send triggers
 
     %%%%%%%%%%%%%%%%%%%%%%%
     % END OF CONFIG
     %%%%%%%%%%%%%%%%%%%%%%%
 
-
-
-
+    %%%%%%%%%%%%%%%%%%%%%%%
+    % TRIGGERS
+    %%%%%%%%%%%%%%%%%%%%%%%    
+    % Channel flags (single bits)
+    triggers.cue_base   = 128; % bit 7  +  IDX of cue 1-51 and 99
+    triggers.keypress   = 64;  % bit 6
+    triggers.stim_base  = 32;  % bit 5
+    triggers.probe_base = 16;  % bit 4 + 1-5
+      
+    % Meta/session markers (singletons; sent when cue timer is stopped)
+    triggers.experiment_start  = 254;
+    triggers.experiment_end    = 255;
+    triggers.break             = 6;
+    triggers.resume            = 7;
     
+    % sent for each number in the SART
+    triggers.stim_lure   = triggers.stim_base ;
+    triggers.stim_target = triggers.stim_base + 1;
+
+    % only needed for CUEING
+    triggers.sound_background_start = 8;
+    triggers.sound_background_stop = 9;
+    triggers.sound_test = 10;
+
+    C.triggers = triggers;
+    %%%%%%%%%%%%%%%%%%%%%%%
+    % END OF TRIGGER
+    %%%%%%%%%%%%%%%%%%%%%%%    
 
     %%%%% sanity checks - %%%
+    if isMATLABReleaseOlderThan('R2021b')
+        error('must use MATLAB > R2021b, best > R2024a')
+    end
+    if isMATLABReleaseOlderThan('R2024a')
+        warning(['Not tested with MATLAB < R2024a. It should work, ' ...
+            'but we dont know. Please report any bugs that you encounter'])
+    end
+
     % make sure no field is missing
     required = ["location","lab_id", "language", "debug_mode",  ...
                 "trigger_interface", "trigger_duration", "trigger_port"];
@@ -71,7 +103,7 @@ function C = MBEDS_LabConfig
         error('noise_type must be "white" or "pink".');
     end
     if ~ismember(C.language, ["de", "en", "fr", "cn", "jp", "nl"])
-                error("language must be 'de', 'en', 'fr', 'cn' or 'jp'");
+                error("language must be 'de', 'en', 'fr', 'cn', 'nl' , or 'jp'");
     end
     if C.force_value>0
         warning('C.force_value is set to a non-zero value, will only send this value')
@@ -84,8 +116,8 @@ function list_serial_ports()
     % Lists all serial ports and indicates availability without opening them
     % Ports are sorted in natural/human order (e.g., COM1, COM2, COM10)
 
-    all_ports = serialportlist("all");
-    available_ports = serialportlist("available");
+    all_ports = cellstr(serialportlist("all"));
+    available_ports = cellstr(serialportlist("available"));
 
     if isempty(all_ports)
         fprintf('No serial ports detected.\n');

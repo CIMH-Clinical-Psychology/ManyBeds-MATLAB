@@ -6,6 +6,7 @@ projectRoot = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 addpath(projectRoot);
 %% Initialize experiment
 RES = struct;                                   % contains results of current subject
+triggers = S.triggers;
 
 % lpt_hex = c.lpt_hex; % LPT1        Address of parallel port    ADJUST TO LOCAL SITUATION
 % lpt_hex  = '4FF8'; % LPT2
@@ -171,7 +172,7 @@ t = timer('ExecutionMode', 'fixedRate', ...
     'TimerFcn', @(~,~) updateLabels(timerLabel));
 
 %% prepare trigger ports
-if S.debug
+if S.debug_mode
     warning('DEBUG_MODE active, will not send triggers')
 else
     if strcmp(S.trigger_interface, "serial")
@@ -209,12 +210,12 @@ PsychPortAudio('FillBuffer', paBGDeviceHandle, backgroundnoise);
 
 printed_stop_message = false;
 %% prepare logfile
-logfile = fopen(fullfile(fileNameBase, sprintf('%s_sleepstim_logfile.log', S.subid)),"a");
+logfile = fopen(fullfile(fileNameBase, sprintf('%s_sleepstim_logfile.log', string(S.subid))),"a");
 
 printf(logfile, "\r\n\r\nManyBeds - Lab %s (%s)\r\n",S.location, S.lab_id);
 printf(logfile, "%s\r\n", mfilename);
-printf(logfile, "Participant %s\r\n", S.subnr);
-printf(logfile, "%s\r\n", S.subid);
+printf(logfile, "Participant %s\r\n", string(S.subnr));
+printf(logfile, "%s\r\n", string(S.subid));
 printf(logfile, '%s\r\n\r\n', datetime);
 
 %% Main Execution Thread
@@ -228,8 +229,6 @@ stimTime = 0;
 t0 = GetSecs;
 t1 = NaN;
 printf(logfile, '[%9.3f] START %s\r\n', GetSecs-t0, datetime);
-
-sendTrigger(255)
 
 while ~stopExperiment
 
@@ -261,13 +260,13 @@ while ~stopExperiment
 
             PsychPortAudio('FillBuffer', paSTIMDeviceHandle, stim{2});
             stimTime = PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
-            sendTrigger(stim_idx)
+            sendTrigger(triggers.cue_base + stim_idx)
 
             % safeguard to prevent negative timestamps in log file
             dt = stimTime - t0;
             if ~isfinite(dt) || dt < -1 
-                dt = GetSecs - self.t0;
-                printf(logfile, '[%9.3f] WARNING - lastStim time was %9.3f, ignoring - the next line timing might be inaccurate',   dt, lastStim);
+                dt = GetSecs - t0;
+                printf(logfile, '[%9.3f] WARNING - lastStim time was %9.3f, ignoring - the next line timing might be inaccurate',   dt, stimTime);
             end
 
             printf(logfile, '[%9.3f] STIM %02d (%s)\r\n', dt, stim_idx, stim{1});
@@ -291,11 +290,11 @@ end
 
         if S.force_value
             % send trigger 3x quickly after each other for synchronization
-            sendTrigger(254)
-            sendTrigger(254)
-            sendTrigger(254)
+            sendTrigger(S.force_value)
+            sendTrigger(S.force_value)
+            sendTrigger(S.force_value)
         else
-            sendTrigger(254)
+            sendTrigger(triggers.experiment_start)
         end
 
         start_exp_btn.Enable = 'off';
@@ -320,7 +319,7 @@ end
         fprintf('Start sound stimulation: %s\n', datetime);
         printf(logfile, '[%9.3f] STARTSTIM\r\n', GetSecs-t0);
 
-        sendTrigger(251)
+        sendTrigger(triggers.resume)
         WaitSecs(0.1)  % wait to prevent overlapping triggers
         testSoundVolumeBtn.Enable = 'off';
         start_snd_btn.Enable = 'off';
@@ -334,7 +333,7 @@ end
         fprintf('Stop sound stimulation: %s\n', datetime);
         printf(logfile, '[%9.3f] STOPSTIM\r\n', GetSecs-t0);
 
-        sendTrigger(250)
+        sendTrigger(triggers.break)
 
         testSoundVolumeBtn.Enable = 'on';
         start_snd_btn.Enable = 'on';
@@ -395,7 +394,7 @@ end
 
     function startBackgroundTest(~, ~)
 
-        sendTrigger(150)
+        sendTrigger(triggers.sound_background_start)
 
         status = PsychPortAudio('GetStatus', paBGDeviceHandle);
         if ~status.Active 
@@ -406,7 +405,7 @@ end
 
     function stopBackgroundTest(~, ~)
 
-        sendTrigger(151)
+        sendTrigger(triggers.sound_background_stop)
 
         PsychPortAudio('Stop', paBGDeviceHandle, 0);
         printf(logfile, '[%9.3f] BACKGROUNDTESTOFF\r\n', GetSecs-t0);
@@ -418,7 +417,7 @@ end
         PsychPortAudio('FillBuffer', paSTIMDeviceHandle, stim{2});
         PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
 
-        sendTrigger(199)
+        sendTrigger(triggers.sound_test)
 
         printf(logfile, '[%9.3f] SOUNDTEST\r\n', GetSecs-t0);
     end
@@ -523,9 +522,7 @@ end
                 printf(logfile, '[%9.3f] STOPSTIM\r\n', GetSecs-t0);
                 playStimulationSounds = false;
             end
-    
-            sendTrigger(250)
- 
+     
             fprintf('End of Experiment: %s\n', datetime);
             RES.sleepduration = GetSecs-t1;
 
@@ -543,11 +540,11 @@ end
             
             if S.force_value
             % send trigger 3x quickly after each other for synchronization
-                sendTrigger(253)
-                sendTrigger(253)
-                sendTrigger(253)
+                sendTrigger(S.force_value)
+                sendTrigger(S.force_value)
+                sendTrigger(S.force_value)
             else
-                sendTrigger(253)
+                sendTrigger(triggers.experiment_end)
             end
 
             % Stop sound series and release audio buffers
@@ -571,7 +568,7 @@ end
             % overwrite individual trigger value with this value
             trigger = S.force_value;
         end
-        if S.debug
+        if S.debug_mode
             disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
             return
         end
