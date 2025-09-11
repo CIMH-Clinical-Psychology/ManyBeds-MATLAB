@@ -25,6 +25,8 @@ function [RES, S] = MBEDS_SART
     S.debug = C.debug_mode;
     S.noise_type = C.noise_type;
     S.force_value = C.force_value;
+    S.triggers = C.triggers;
+    triggers = C.triggers;
 
     S.study = "SART";
 
@@ -102,7 +104,7 @@ function [RES, S] = MBEDS_SART
     try
         sound_csv_subject = readtable(anticlust_file);
     catch
-        error("Cannot load stimsounds for subject %s from subfolder StimFilesSubjects, " + ...
+        error("Cannot load stimsounds for subject %s from subfolder stimulation_files, " + ...
               "make sure the file %s has been calculated and is present", ...
               S.subid, anticlust_file);
     end
@@ -152,7 +154,8 @@ function [RES, S] = MBEDS_SART
     fprintf("\nLoaded %d auditory stimuli (%d controls), will play %s repetitions\n", ...
             length(sound_ids_subject), n_stim, S.max_repetitions)
     %% define log file here to pass later into thread
-    logfile = fopen(fullfile(resultsFilePath, sprintf("%s_SART_logfile.log", S.subid)),"a");
+    timestamp = string(datetime("now","Format","yymmdd-HHmmss"));
+    logfile = fopen(fullfile(resultsFilePath, sprintf("%s_SART_logfile_%s.log", S.subid, timestamp)),"a");
 
     %% initialize psychtoolbox audio
     [S.audio_device_id, S.audio_fs] = chooseAudioOutputDevice();
@@ -164,7 +167,7 @@ function [RES, S] = MBEDS_SART
     PsychPortAudio('Volume', paBGDeviceHandle , S.backgroundVolume);
     PsychPortAudio('Volume', paSTIMDeviceHandle , S.soundVolume);
 
-    backgroundnoise = audioread(fullfile('Stimuli', "noise_" + S.noise_type + ".mp3"))';
+    backgroundnoise = audioread(fullfile(currpath, 'Stimuli', "noise_" + S.noise_type + ".mp3"))';
     if size(backgroundnoise,1)==1
         backgroundnoise = repmat(backgroundnoise,2,1);
     end
@@ -182,6 +185,7 @@ function [RES, S] = MBEDS_SART
     % we need to use a structure to pass variables between the main 5
     % function and the fake 'thread' that plays the audio
     tState.stim_dict            = stim_dict; 
+    tState.triggers             = triggers;
     tState.sound_ids_subject    = sound_ids_subject;
     tState.paSTIMDeviceHandle   = paSTIMDeviceHandle;
     tState.logfile              = logfile;
@@ -235,7 +239,7 @@ function [RES, S] = MBEDS_SART
 
     img = zeros(8,1);
     for i=1:8
-        t = imread(fullfile("Stimuli", "sart" + num2str(i) + "_" + S.language +".png"));
+        t = imread(fullfile(currpath, "Stimuli", "sart" + num2str(i) + "_" + S.language +".png"));
         t = imresize(t, sizefactor);
         img(i) = Screen('MakeTexture', win, t);
     end
@@ -323,13 +327,13 @@ function [RES, S] = MBEDS_SART
 
     S.t0 = GetSecs;
 
-    % send start trigger
+    % send start trigger for some labs
     if S.force_value
-        sendTrigger(230);
-        sendTrigger(230);
-        sendTrigger(230);
+        sendTrigger(S.force_value);
+        sendTrigger(S.force_value);
+        sendTrigger(S.force_value);
     else
-        sendTrigger(230);
+        sendTrigger(triggers.experiment_start);
     end
 
 
@@ -361,6 +365,7 @@ function [RES, S] = MBEDS_SART
     pause(5);
         
     for i = 1:S.ntrials
+        disp("trial " + num2str(i) + '/' + num2str(S.ntrials));
         KbQueueFlush(); % clear any previous keypresses to prevent false detection
 
         if S.targets(i)   % target is number 3
@@ -368,13 +373,13 @@ function [RES, S] = MBEDS_SART
             tim = displayStimulus(3);
             tstim = tim;
             % log stimulus
-            printf(logfile, '[%9.3f] TARGET %03d\n', tim - S.t0, n_target);
-            sendTrigger(S.targets(i)+10);
+            printf(logfile, '[%9.3f] KEYPRESS TARGET %03d\n', tim - S.t0, n_target);
+            sendTrigger(triggers.stim_target);
             mask = false;
             started = GetSecs;
             curr_interval = drawNormal(S.mask_dur_mean, S.mask_dur_sd);
             while GetSecs-started < S.stim_dur + curr_interval
-                if GetSecs-started > 0.450 && ~mask
+                if GetSecs-started > S.stim_dur && ~mask
                    tim = displayMask;
                    % log mask
                    printf(logfile, '[%9.3f] MASK %03d - interval %dms\n', tim - S.t0, i, round(curr_interval*1000));
@@ -385,8 +390,8 @@ function [RES, S] = MBEDS_SART
                     n_resp = n_resp + 1;
                     tim = tims(KbName('space'));
                     % log error
-                    printf(logfile, '[%9.3f] ERROR %03d - %5.3f s\n', tim - S.t0, i, tim - tstim);
-                    sendTrigger(200);
+                    printf(logfile, '[%9.3f] KEYPRESS - FALSE ALARM %03d - %5.3f s\n', tim - S.t0, i, tim - tstim);
+                    sendTrigger(triggers.keypress);
                     n_errors = n_errors + 1;
                     RES.errors(n_errors,1) = tim - tstim;
                     RES.errors(n_errors,2) = n_target;
@@ -401,13 +406,13 @@ function [RES, S] = MBEDS_SART
             tstim = tim;
             % log stimulus
             printf(logfile, '[%9.3f] NON-TARGET %03d (%d)\n', tim - S.t0, n_nontarget, nontarget);
-            sendTrigger(nontarget);
+            sendTrigger(triggers.stim_lure);
             keydown = false;
             mask = false;
             started = GetSecs;
             curr_interval = drawNormal(S.mask_dur_mean, S.mask_dur_sd);
             while GetSecs-started < S.stim_dur + curr_interval
-                if GetSecs-started > 0.450 && ~mask
+                if GetSecs-started > S.stim_dur && ~mask
                    tim = displayMask;
                    % log mask
                    printf(logfile, '[%9.3f] MASK %03d - interval %dms\n', tim - S.t0, i, round(curr_interval*1000));
@@ -419,7 +424,7 @@ function [RES, S] = MBEDS_SART
                     % log time
                     tim = tims(KbName('space'));
                     printf(logfile, '[%9.3f] RT_NON-TARGET %03d - %5.3f s\n', tim - S.t0, n_nontarget, tim - tstim);
-                    sendTrigger(100);
+                    sendTrigger(triggers.keypress);
                     if isnan(RES.RTnontarget(n_nontarget))
                         RES.RTnontarget(n_nontarget) = tim - tstim;
                     else
@@ -447,14 +452,14 @@ function [RES, S] = MBEDS_SART
             tim = displayProbe;
 
             printf(logfile, '[%9.3f] PROBE %03d\n', tim - S.t0, n_probe);
-            sendTrigger(90);
+            sendTrigger(triggers.probe_base);
             keyname = [];
             while isempty(keyname) | ~ismember(keyname(1), '12345') % 1-5, cross-OS style
                 [tim, keys] = KbWait(-1,2);
                 keyname = getKeyNum(keys);
             end
             printf(logfile, '[%9.3f] PROBE_RESPONSE %03d (%s)\n', tim - S.t0, n_probe, keyname);
-            sendTrigger(90 + str2double(keyname));  % should send 91-95 depending on answer
+            sendTrigger(triggers.probe_base + str2double(keyname));  % should send 91-95 depending on answer
             RES.proberesponses(n_probe) = str2double(keyname);
 
             tim = displayMask;
@@ -482,9 +487,9 @@ function [RES, S] = MBEDS_SART
             text = translate("break") + "\n\n" + translate("space_continue");
             DrawFormattedText(win, char(text), 'center', 'center', white);
             Screen('Flip', win);
-            sendTrigger(254);
+            sendTrigger(triggers.break);
             waitForKeypress('space');
-            sendTrigger(255);
+            sendTrigger(triggers.resume);
             % The task will begin in 10 seconds...
             text = translate("task_countdown");
             DrawFormattedText(win, char(text), 'center', 'center', white);
@@ -503,13 +508,7 @@ function [RES, S] = MBEDS_SART
     save(savefile, 'S', 'RES');
     printf(logfile, '[%9.3f] END %s\n', GetSecs-S.t0, datetime);
 
-    if S.force_value
-        sendTrigger(240);
-        sendTrigger(240);
-        sendTrigger(240);
-    else
-        sendTrigger(240);
-    end
+
 
     % 'You have finished this task...'
     text = translate("finished");
@@ -529,6 +528,15 @@ function [RES, S] = MBEDS_SART
     fprintf("non-targets correct: %d/%d\n", sum(RES.RTnontarget>0), sum(S.targets==0));
     stop(cueTimer)
     delete(cueTimer)
+
+    if S.force_value
+        sendTrigger(S.force_value);
+        sendTrigger(S.force_value);
+        sendTrigger(S.force_value);
+    else
+        sendTrigger(triggers.experiment_end);
+    end
+
     PsychPortAudio('Close')
     fclose(logfile);
 
@@ -682,7 +690,7 @@ function playCues(timerObj, ~)
     end
 
     idx = self.order(self.countstim);
-    sendTrigger(100 + idx);
+    sendTrigger(self.triggers.cue_base + idx);
 
     stim = self.stim_dict(idx);
     PsychPortAudio('FillBuffer', self.paSTIMDeviceHandle, stim{2});
@@ -762,7 +770,7 @@ function number = getKeyNum(keys)
 end
 
 function out = translate(key)
-%TRANSLATE  Fetch localised text for KEY from Translations/translations.json
+%TRANSLATE  Fetch localised text for KEY from %currpath%/translations.json
 %   Requires struct S with field S.language (e.g. 'en', 'de') in caller.
 
     % explicit conversion to string to prevent char arrays
