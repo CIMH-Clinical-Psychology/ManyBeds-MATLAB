@@ -373,7 +373,7 @@ function [RES, S] = MBEDS_SART
             tim = displayStimulus(3);
             tstim = tim;
             % log stimulus
-            printf(logfile, '[%9.3f] KEYPRESS TARGET %03d\n', tim - S.t0, n_target);
+            printf(logfile, '[%9.3f] TARGET DIGIT %03d (3)\n', tim - S.t0, n_target);
             sendTrigger(triggers.stim_target);
             mask = false;
             started = GetSecs;
@@ -390,7 +390,7 @@ function [RES, S] = MBEDS_SART
                     n_resp = n_resp + 1;
                     tim = tims(KbName('space'));
                     % log error
-                    printf(logfile, '[%9.3f] KEYPRESS - FALSE ALARM %03d - %5.3f s\n', tim - S.t0, i, tim - tstim);
+                    printf(logfile, '[%9.3f] KEYPRESS - CORRECT %03d - %5.3f s\n', tim - S.t0, i, tim - tstim);
                     sendTrigger(triggers.keypress);
                     n_errors = n_errors + 1;
                     RES.errors(n_errors,1) = tim - tstim;
@@ -405,7 +405,7 @@ function [RES, S] = MBEDS_SART
             tim = displayStimulus(nontarget);
             tstim = tim;
             % log stimulus
-            printf(logfile, '[%9.3f] NON-TARGET %03d (%d)\n', tim - S.t0, n_nontarget, nontarget);
+            printf(logfile, '[%9.3f] NON-TARGET DIGIT %03d (%d)\n', tim - S.t0, n_nontarget, nontarget);
             sendTrigger(triggers.stim_lure);
             keydown = false;
             mask = false;
@@ -423,7 +423,7 @@ function [RES, S] = MBEDS_SART
                     n_resp = n_resp + 1;
                     % log time
                     tim = tims(KbName('space'));
-                    printf(logfile, '[%9.3f] RT_NON-TARGET %03d - %5.3f s\n', tim - S.t0, n_nontarget, tim - tstim);
+                    printf(logfile, '[%9.3f] KEYPRESS FALSE ALARM %03d - %5.3f s\n', tim - S.t0, n_nontarget, tim - tstim);
                     sendTrigger(triggers.keypress);
                     if isnan(RES.RTnontarget(n_nontarget))
                         RES.RTnontarget(n_nontarget) = tim - tstim;
