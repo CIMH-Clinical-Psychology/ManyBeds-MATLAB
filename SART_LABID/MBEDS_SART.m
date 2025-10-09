@@ -423,7 +423,7 @@ function [RES, S] = MBEDS_SART
                     n_resp = n_resp + 1;
                     % log time
                     tim = tims(KbName('space'));
-                    printf(logfile, '[%9.3f] KEYPRESS FALSE ALARM %03d - %5.3f s\n', tim - S.t0, n_nontarget, tim - tstim);
+                    printf(logfile, '[%9.3f] KEYPRESS - FALSE ALARM %03d - %5.3f s\n', tim - S.t0, n_nontarget, tim - tstim);
                     sendTrigger(triggers.keypress);
                     if isnan(RES.RTnontarget(n_nontarget))
                         RES.RTnontarget(n_nontarget) = tim - tstim;
