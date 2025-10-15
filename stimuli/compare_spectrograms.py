@@ -122,7 +122,7 @@ def normalize_lims(axs, which='xy'):
 
 # Define both folders
 folder1 = './original/'
-folder2 = './version_julia/'
+folder2 = './version_julia_2/'
 out_folder = './spectrograms_comparison/'
 
 file_list1 = ospath.list_files(folder1, exts='wav')

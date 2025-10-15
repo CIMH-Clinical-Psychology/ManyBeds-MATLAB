@@ -73,7 +73,7 @@ which = 'clean'
 
 # Set your directories here
 dir_a = './original/'
-dir_b = './version_julia'
+dir_b = './version_julia_2'
 
 df = compare_wav_dirs(dir_a, dir_b)
 print(df)
@@ -151,7 +151,7 @@ def power_spectrum_welch(x, sr):
     psd_db = 10.0 * np.log10(pxx)
     return freqs, psd_db
 
-folder = "./amherst_clean_2/"
+folder = "./version_julia_2/"
 
 wavs = list_wavs(folder)
 
