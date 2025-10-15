@@ -122,11 +122,11 @@ def normalize_lims(axs, which='xy'):
 
 # Define both folders
 folder1 = './original/'
-folder2 = './amherst_clean_2/'
+folder2 = './version_julia/'
 out_folder = './spectrograms_comparison/'
 
 file_list1 = ospath.list_files(folder1, exts='wav')
-file_list2 = ospath.list_files(folder2, exts='wav')[:-2]
+file_list2 = ospath.list_files(folder2, exts='wav')
 
 # Make sure same files exist in both
 assert len(file_list1) == len(file_list2), "Folders must contain same number of files"

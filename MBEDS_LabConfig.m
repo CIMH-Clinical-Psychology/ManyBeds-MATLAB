@@ -14,7 +14,7 @@ function C = MBEDS_LabConfig
     C.lab_id   = "C99";            % your lab ID       
     
     % 2) language of SART
-    C.language = "en";             % options: 'de', 'en', 'fr', 'cn', 'jp'
+    C.language = "de";             % options: 'de', 'en', 'fr', 'cn', 'jp'
 
     % 3) type of noise
     C.noise_type = 'pink';        % can be either white or pink
@@ -33,7 +33,7 @@ function C = MBEDS_LabConfig
     C.force_value = false;  % false to disable, else set to an integer value
 
     % 4) debug mode
-    C.debug_mode = false;       % set to false to send triggers
+    C.debug_mode = true;       % set to false to send triggers
 
     %%%%%%%%%%%%%%%%%%%%%%%
     % END OF CONFIG
