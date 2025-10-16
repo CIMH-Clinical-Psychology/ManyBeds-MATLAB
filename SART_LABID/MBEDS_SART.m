@@ -146,7 +146,7 @@ function [RES, S] = MBEDS_SART
     if size(audio,1)==1
         audio = repmat(audio,2,1);
     end
-    stim_dict(99) = {baselinesound_name, audio, ones(100, 100)};
+    stim_dict(99) = {string(baselinesound_name) + ' - control sound', audio, ones(100, 100)};
     %add the baseline sound to stimulation list
     n_stim = length(sound_ids_subject);
     sound_ids_subject = [sound_ids_subject(randperm(n_stim)), repmat(99, 1, n_stim)];
@@ -307,7 +307,6 @@ function [RES, S] = MBEDS_SART
         end
         pause(S.key_pause);
         % 'Practice Trial\n\nPress SPACE when ready...'
-        % HA HA HA, JULI FUCKED UP YOUR CODE
         text = translate("practice_trial") + "\n\n" + translate("space_start");
         DrawFormattedText(win, char(text), 'center', 'center', white);
         Screen('Flip', win);
@@ -353,6 +352,8 @@ function [RES, S] = MBEDS_SART
     RES.proberesponses = NaN(sum(S.probes),1);
     RES.errors = [];
     RES.missed = [];
+    RES.trial_responses = {};
+
     n_nontarget = 0;
     n_target = 0;
     n_probe = 0;
@@ -365,9 +366,10 @@ function [RES, S] = MBEDS_SART
     pause(5);
         
     for i = 1:S.ntrials
-        disp("trial " + num2str(i) + '/' + num2str(S.ntrials));
+        printf(logfile, "[%9.3f] Trial %d/%d\n", GetSecs-S.t0, i, S.ntrials);
         KbQueueFlush(); % clear any previous keypresses to prevent false detection
-
+        curr_response = '';  % reset current response
+        curr_rt = nan;
         if S.targets(i)   % target is number 3
             n_target = n_target + 1;
             tim = displayStimulus(3);
@@ -390,13 +392,20 @@ function [RES, S] = MBEDS_SART
                     n_resp = n_resp + 1;
                     tim = tims(KbName('space'));
                     % log error
-                    printf(logfile, '[%9.3f] KEYPRESS - CORRECT %03d - %5.3f s\n', tim - S.t0, i, tim - tstim);
+                    printf(logfile, '[%9.3f] KEYPRESS - FALSE ALARM %03d - %5.3f s\n', tim - S.t0, i, tim - tstim);
                     sendTrigger(triggers.keypress);
                     n_errors = n_errors + 1;
                     RES.errors(n_errors,1) = tim - tstim;
                     RES.errors(n_errors,2) = n_target;
+                    curr_response = 'INCORRECT KEYPRESS';
+                    curr_rt = tim - tstim;
                 end
             end
+            if isempty(curr_response)
+                curr_response = 'CORRECT NON-KEYPRESS';
+                printf(logfile, '[%9.3f] CORRECT NON-PRESS %03d - %5.3f s\n', tim - S.t0, i, tim - tstim);
+            end
+
         else    % non-target
             nontarget = randi(8);
             if nontarget>2, nontarget = nontarget + 1; end % 3 cannot occur (-> target)
@@ -423,7 +432,8 @@ function [RES, S] = MBEDS_SART
                     n_resp = n_resp + 1;
                     % log time
                     tim = tims(KbName('space'));
-                    printf(logfile, '[%9.3f] KEYPRESS - FALSE ALARM %03d - %5.3f s\n', tim - S.t0, n_nontarget, tim - tstim);
+                    printf(logfile, '[%9.3f] KEYPRESS - CORRECT %03d - %5.3f s\n', tim - S.t0, n_nontarget, tim - tstim);
+                    curr_response = 'CORRECT KEYPRESS';
                     sendTrigger(triggers.keypress);
                     if isnan(RES.RTnontarget(n_nontarget))
                         RES.RTnontarget(n_nontarget) = tim - tstim;
@@ -431,6 +441,8 @@ function [RES, S] = MBEDS_SART
                         RES.additionalnontarget(n_resp) = tim - tstim;
                     end
                     keydown = true;
+                    curr_response = 'CORRECT KEYPRESS';
+                    curr_rt = tim - tstim;
                 end
             end
             if ~keydown
@@ -439,8 +451,11 @@ function [RES, S] = MBEDS_SART
                 printf(logfile, '[%9.3f] MISSED %03d\n', tim - S.t0, n_missed);
                 RES.missed(n_missed,1) = tim - S.t0;
                 RES.missed(n_missed,2) = n_nontarget;
+                curr_response =  'INCORRECT NON-KEYPRESS';
             end
         end
+
+        RES.trial_responses{end+1} = {curr_response, curr_rt};
 
         if S.probes(i)
             % disable cueing

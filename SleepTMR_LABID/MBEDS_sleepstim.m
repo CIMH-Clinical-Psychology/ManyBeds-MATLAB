@@ -110,7 +110,7 @@ function [RES, S] = MBEDS_sleepstim
     if size(audio,1)==1
         audio = repmat(audio,2,1);
     end
-    stim_dict(99) = {baselinesound_name, audio, ones(100, 100)};
+    stim_dict(99) = {string(baselinesound_name) + ' - control sound', audio, ones(100, 100)};
     %add the baseline sound to stimulation list
     S.sound_ids_subject = [sound_ids_subject, repmat(99, 1, length(sound_ids_subject))];
     S.sound_ids_subject = S.sound_ids_subject(randperm(numel(S.sound_ids_subject))); % intial shuffle
