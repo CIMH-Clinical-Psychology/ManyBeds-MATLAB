@@ -14,6 +14,7 @@ Read here how to install: [Psychtoolbox-3 - Download, Installation, and Update](
 27.08.2025 v1.2 - add exception for C11 for sending only a specific trigger. Fix path encoding string/char arrays problems
 03.09.2025 v1.3 - add support for flexible baseline sound assignment. Needs new anticlust files with two columns.
 09.10.2025 v1.4 - fix errors in logfile output
+16.10.2025 v1.5 - fix printing, improve GUI, new sounds, add better output to SART
 ```
 
 ## Triggers SART
