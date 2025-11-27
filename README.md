@@ -38,11 +38,12 @@ the following triggers are sent:
 
 | trigger id         | description                                    |
 | ------------------:| ---------------------------------------------- |
-| **128 – 178, 227** | Cue onset (*cue IDs 1–51 and 99*: 128 + index) |
-| **122**            | Background sound (night stimulation) starts    |
-| **123**            | Background sound stops                         |
-| **124**            | Test sound presented                           |
 | **6**              | Stimulation stopped                            |
 | **7**              | Stimulation resumes/starts                     |
+| **8**              | Background sound started (manually)            |
+| **9**              | Background sound stopped (manually)            |
+| **10**             | test sound played (manually)                   |
+| **128 – 178, 227** | Cue onset (*cue IDs 1–51 and 99*: 128 + index) |
 | **254**            | Experiment start                               |
 | **255**            | Experiment end                                 |
+
