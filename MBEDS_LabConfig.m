@@ -14,7 +14,7 @@ function C = MBEDS_LabConfig
     C.lab_id   = "C99";            % your lab ID       
     
     % 2) language of SART
-    C.language = "jp";             % options: 'de', 'en', 'fr', 'cn', 'jp'
+    C.language = "cn";             % options: 'de', 'en', 'fr', 'cn', 'jp'
 
     % 3) type of noise
     C.noise_type = 'pink';        % can be either white or pink

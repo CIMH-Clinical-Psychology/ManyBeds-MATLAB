@@ -252,7 +252,7 @@ function [RES, S] = MBEDS_SART
     % first best match (not sure this works! else put in a custom font here)
     if strcmp(S.language, 'jp')
         Screen('TextFont', win, '-:lang=ja');
-    elseif strcmp(S.language, 'ch')
+    elseif strcmp(S.language, 'cn')
         Screen('TextFont', win, '-:lang=zh-cn');
     elseif strcmp(S.language, 'de')
         Screen('TextFont', win, '-:lang=de');
@@ -260,6 +260,8 @@ function [RES, S] = MBEDS_SART
         Screen('TextFont', win, '-:lang=en');
     elseif strcmp(S.language, 'fr')
         Screen('TextFont', win, '-:lang=fr');
+    else
+        error('an unknown language code was supplied: ' + string(S.language))
     end
 
     %% Initialization
