@@ -15,6 +15,7 @@ Read here how to install: [Psychtoolbox-3 - Download, Installation, and Update](
 03.09.2025 v1.3 - add support for flexible baseline sound assignment. Needs new anticlust files with two columns.
 09.10.2025 v1.4 - fix errors in logfile output
 16.10.2025 v1.5 - fix printing, improve GUI, new sounds, add better output to SART
+10.12.2025 v1.6 - fix displaying of japanese characters
 ```
 
 ## Triggers SART
@@ -46,4 +47,3 @@ the following triggers are sent:
 | **128 – 178, 227** | Cue onset (*cue IDs 1–51 and 99*: 128 + index) |
 | **254**            | Experiment start                               |
 | **255**            | Experiment end                                 |
-
