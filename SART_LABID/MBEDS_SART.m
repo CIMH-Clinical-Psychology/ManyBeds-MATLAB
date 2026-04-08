@@ -544,9 +544,8 @@ function [RES, S] = MBEDS_SART
     text = translate("finished");
     DrawFormattedText(win, double(char(text)), 'center', 'center', white);
     Screen('Flip', win);
-    pause(5);
+    pause(3);
     waitForKeypress('space');
-    KbQueueStop(-1);
     KbQueueRelease(-1);
     Screen('CloseAll');
 
