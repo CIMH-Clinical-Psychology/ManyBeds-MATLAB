@@ -1,6 +1,6 @@
 function [RES, S] = MBEDS_SART
 
-    Screen('Preference', 'SkipSyncTests', 1);
+    Screen('Preference', 'SkipSyncTests', 0);
     Screen('Preference', 'TextRenderer', 1); % use better text rendereing for UTF8 compatibility
 
     KbName('UnifyKeyNames');
@@ -320,7 +320,7 @@ function [RES, S] = MBEDS_SART
         for i=1:8
             displayProbe(i);
             pause(S.key_pause);
-            KbWait; 
+            waitForKeypress('space'); 
         end
         pause(S.key_pause);
         % 'Practice Trial\n\nPress SPACE when ready...'
@@ -359,11 +359,8 @@ function [RES, S] = MBEDS_SART
     set(cueTimer,'UserData',UD);
     start(cueTimer);
 
-    respKeys=zeros(1,256);
-    respKeys(KbName('space'))=1;
-    KbQueueCreate(-1, respKeys);
-    KbQueueStart(-1);
-    
+    resetDefaultQueue()
+
     %% Begin Task Trials
     RES.RTnontarget = NaN(sum(S.targets==0),1);
     RES.proberesponses = NaN(sum(S.probes),1);
@@ -384,7 +381,7 @@ function [RES, S] = MBEDS_SART
         
     for i = 1:S.ntrials
         printf(logfile, "[%9.3f] Trial %d/%d\n", GetSecs-S.t0, i, S.ntrials);
-        KbQueueFlush(); % clear any previous keypresses to prevent false detection
+        KbQueueFlush(-1); % clear any previous keypresses to prevent false detection
         curr_response = '';  % reset current response
         curr_rt = nan;
         if S.targets(i)   % target is number 3
@@ -485,11 +482,8 @@ function [RES, S] = MBEDS_SART
 
             printf(logfile, '[%9.3f] PROBE %03d\n', tim - S.t0, n_probe);
             sendTrigger(triggers.probe_base);
-            keyname = [];
-            while isempty(keyname) | ~ismember(keyname(1), '12345') % 1-5, cross-OS style
-                [tim, keys] = KbWait(-1,2);
-                keyname = getKeyNum(keys);
-            end
+            [tim, keyname] = waitForProbeResponse();
+
             printf(logfile, '[%9.3f] PROBE_RESPONSE %03d (%s)\n', tim - S.t0, n_probe, keyname);
             sendTrigger(triggers.probe_base + str2double(keyname));  % should send 91-95 depending on answer
             RES.proberesponses(n_probe) = str2double(keyname);
@@ -497,6 +491,9 @@ function [RES, S] = MBEDS_SART
             tim = displayMask;
             printf(logfile, '[%9.3f] MASK %03d\n', tim - S.t0, i);
             pause(5);
+
+            % restart keyboard queue
+            resetDefaultQueue()
 
             % resume cueing and add random delay
             cueTimer.StartDelay = drawNormal(2, 1);
@@ -521,6 +518,7 @@ function [RES, S] = MBEDS_SART
             Screen('Flip', win);
             sendTrigger(triggers.break);
             waitForKeypress('space');
+            resetDefaultQueue()
             sendTrigger(triggers.resume);
             % The task will begin in 10 seconds...
             text = translate("task_countdown");
@@ -546,8 +544,9 @@ function [RES, S] = MBEDS_SART
     text = translate("finished");
     DrawFormattedText(win, double(char(text)), 'center', 'center', white);
     Screen('Flip', win);
-    pause(5);
-    KbWait;
+    pause(3);
+    waitForKeypress('space');
+    KbQueueRelease(-1);
     Screen('CloseAll');
 
     try  % if no errors occured RES.errors will be empty
@@ -574,23 +573,107 @@ function [RES, S] = MBEDS_SART
 
     %% subfunctions
     function waitForKeypress(name)
-        % wait for specific keypress of key NAME; default name is space
         if nargin < 1
-            name = 'space'; % Default value
+            name = 'space'; % default value
         end
-        % unify keyboards across OS
+        
+        % unify across OS
         KbName('UnifyKeyNames');
-
-        spaceKey = KbName(name);
+        targetKey = KbName(name);
+    
+        % listen only for this specific key
+        keysOfInterest = zeros(1, 256);
+        keysOfInterest(targetKey) = 1;
+    
+        % Create new queue for this one waiting time
+        KbQueueRelease(-1);
+        KbQueueCreate(-1, keysOfInterest);
+        KbQueueStart(-1);
+    
+        % Remove any old input that might linger
+        KbQueueFlush(-1);
+    
+        % Now wait for the first keypress
         while true
-            [~, keyCode] = KbWait;
-            Screen('Flip', win);
-            if keyCode(spaceKey)
+            [pressed, firstPress] = KbQueueCheck(-1);
+            if pressed && firstPress(targetKey) > 0
                 break;
             end
+            WaitSecs(0.01);
+            % Screen('Flip', win);
         end
+    
+        % Remove the queue
+        KbQueueStop(-1);
+        KbQueueRelease(-1);
     end
 
+
+    function [tim, keyname] = waitForProbeResponse()
+        % Wait for a number respone of 1-5
+        % should work cross-os and also with numpad and activated CAPSLOCK
+        KbName('UnifyKeyNames');
+
+        names = {  % these are all the valid keys that might be there
+                    '1', {'1','1!','KP_1','KP_End','End'};
+                    '2', {'2','2@','KP_2','KP_Down','Down'};
+                    '3', {'3','3#','KP_3','KP_Page_Down','Page_Down'};
+                    '4', {'4','4$','KP_4','KP_Left','Left'};
+                    '5', {'5','5%','KP_5','KP_Begin','Begin'};
+                };
+         
+        % these are the ones being listened for later with the queue
+        keysOfInterest = zeros(1, 256);
+
+        % this is the custom mapping from keycode to number in our system
+        keyMap = containers.Map('KeyType','double','ValueType','char');
+   
+        % reconstruct to capture all keys that we possibly need
+        for row = 1:size(names, 1)
+            ch = names{row, 1};
+            for c = 1:length(names{row, 2})
+                try
+                    % see if this is a valid KbName on this system
+                    codes = KbName(names{row, 2}{c});
+                catch
+                    continue;
+                end
+                for ci = 1:length(codes)
+                    if codes(ci) > 0 && codes(ci) <= 256
+                        keysOfInterest(codes(ci)) = 1;
+                        keyMap(codes(ci)) = ch;
+                    end
+                end
+            end
+        end
+
+        % release previous queue and setup new queue
+        KbQueueRelease(-1);
+        KbQueueCreate(-1, keysOfInterest);
+        KbQueueStart(-1);
+        KbQueueFlush(-1);
+    
+        keyname = [];
+        tim = NaN;
+    
+        while isempty(keyname)
+            [pressed, firstPress] = KbQueueCheck(-1);
+            if pressed
+                idxPressed = find(firstPress);
+                if ~isempty(idxPressed)
+                    [tim, idx] = min(firstPress(idxPressed));
+                    code = idxPressed(idx);
+                    if isKey(keyMap, code)
+                        keyname = keyMap(code);
+                    end
+                end
+            end
+            WaitSecs(0.01);
+        end
+    
+        KbQueueStop(-1);
+        KbQueueRelease(-1);
+    end
 
     function tim = displayMask
         Screen('DrawDots', win, S.screencenter, 10*sizefactor, [255 255 255], [], 2);
@@ -604,6 +687,16 @@ function [RES, S] = MBEDS_SART
         DrawFormattedText(win, double(char(num2str(num))), 'center', 'center', color); 
         tim = Screen('Flip', win);
     end    
+
+    function resetDefaultQueue()
+        % setup defaultQueue
+        KbQueueRelease(-1);  % as safety, should not actually do anything
+        respKeys=zeros(1,256);
+        respKeys(KbName('space'))=1;
+        KbQueueCreate(-1, respKeys);
+        KbQueueStart(-1);
+        KbQueueFlush(-1);
+    end
 
     function tim = displayProbe(num)
         if nargin < 1
