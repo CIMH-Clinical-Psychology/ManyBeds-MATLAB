@@ -211,7 +211,7 @@ function [RES, S] = MBEDS_SART
     % we're basically pretending that the timer is a thread.
     cueTimer = timer('UserData', tState, ...
                      'Period', S.stimdelay, ...
-                     'StartDelay', drawNormal(2, 1), ...  % random jitter when cueing will exactly start
+                     'StartDelay', drawTruncatedNormal(2, 1), ...  % random jitter when cueing will exactly start
                      'ExecutionMode', 'fixedSpacing', ...  % fixed spacing makes sure between end of timer and beginning of next is 5s
                      'TimerFcn',@playCues);
 
@@ -302,15 +302,15 @@ function [RES, S] = MBEDS_SART
         waitForKeypress('space');
 
         displayMask;
-        WaitSecs(drawNormal(S.mask_dur_mean, S.mask_dur_sd));
+        WaitSecs(drawTruncatedNormal(S.mask_dur_mean, S.mask_dur_sd));
         displayStimulus(7);
         WaitSecs(S.stim_dur);
         displayMask;
-        WaitSecs(drawNormal(S.mask_dur_mean, S.mask_dur_sd));
+        WaitSecs(drawTruncatedNormal(S.mask_dur_mean, S.mask_dur_sd));
         displayStimulus(3);
         WaitSecs(S.stim_dur);
         displayMask;
-        WaitSecs(drawNormal(S.mask_dur_mean, S.mask_dur_sd));
+        WaitSecs(drawTruncatedNormal(S.mask_dur_mean, S.mask_dur_sd));
         % 'Press SPACE to continue'
         text = translate("space_continue");
         DrawFormattedText(win, double(char(text)), 'center', 'center', white);
@@ -393,7 +393,7 @@ function [RES, S] = MBEDS_SART
             sendTrigger(triggers.stim_target);
             mask = false;
             started = GetSecs;
-            curr_interval = drawNormal(S.mask_dur_mean, S.mask_dur_sd);
+            curr_interval = drawTruncatedNormal(S.mask_dur_mean, S.mask_dur_sd);
             while GetSecs-started < S.stim_dur + curr_interval
                 if GetSecs-started > S.stim_dur && ~mask
                    tim = displayMask;
@@ -433,7 +433,7 @@ function [RES, S] = MBEDS_SART
             keydown = false;
             mask = false;
             started = GetSecs;
-            curr_interval = drawNormal(S.mask_dur_mean, S.mask_dur_sd);
+            curr_interval = drawTruncatedNormal(S.mask_dur_mean, S.mask_dur_sd);
             while GetSecs-started < S.stim_dur + curr_interval
                 if GetSecs-started > S.stim_dur && ~mask
                    tim = displayMask;
@@ -496,7 +496,7 @@ function [RES, S] = MBEDS_SART
             resetDefaultQueue()
 
             % resume cueing and add random delay
-            cueTimer.StartDelay = drawNormal(2, 1);
+            cueTimer.StartDelay = drawTruncatedNormal(2, 1);
             start(cueTimer)
         end
 
@@ -530,7 +530,7 @@ function [RES, S] = MBEDS_SART
             pause(5);
 
             % resume cueing and add random delay
-            cueTimer.StartDelay = drawNormal(2, 1);
+            cueTimer.StartDelay = drawTruncatedNormal(2, 1);
             start(cueTimer)
         end
     end
@@ -861,7 +861,7 @@ end
 
 
 
-function value = drawNormal(mean, sd)
+function value = drawTruncatedNormal(mean, sd)
     % draw from a normal distribution with mean and sd
     % truncate values at +- 1sd
 
@@ -872,6 +872,9 @@ function value = drawNormal(mean, sd)
     value = mean + sd * randn();
     % Truncate to within the interval
     value = max(min(value, interval(2)), interval(1));
+    
+    % round value to millisecond precision
+    value = round(value, 3);
 end
 
 function printf(fileID, varargin)
