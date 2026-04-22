@@ -312,8 +312,11 @@ end
         if S.force_value
             % send trigger 3x quickly after each other for synchronization
             sendTrigger(S.force_value)
+            WaitSecs(S.trigger_duration);
             sendTrigger(S.force_value)
+            WaitSecs(S.trigger_duration);
             sendTrigger(S.force_value)
+            WaitSecs(S.trigger_duration);
         else
             sendTrigger(triggers.experiment_start)
         end
