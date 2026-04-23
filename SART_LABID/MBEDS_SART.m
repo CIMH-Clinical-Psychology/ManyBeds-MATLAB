@@ -835,6 +835,7 @@ function playCues(timerObj, ~)
 
     %% nested trigger function
     function sendTrigger(trigger)
+        trigger_orig = trigger;
         if self.force_value
             % overwrite individual trigger value with this value
             trigger = self.force_value;
@@ -856,6 +857,7 @@ function playCues(timerObj, ~)
             WaitSecs(self.trigger_duration);
             io64(self.trigger_handle, self.trigger_port, 0);
         end
+        printf(logfile, '[%9.3f] TRIGGER %d \r\n', GetSecs-t0, trigger_orig);
     end
 end
 

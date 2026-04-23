@@ -588,6 +588,8 @@ end
     end
 
     function sendTrigger(trigger)
+        trigger_orig = trigger;
+
         if S.force_value
             % overwrite individual trigger value with this value
             trigger = S.force_value;
@@ -609,6 +611,7 @@ end
             WaitSecs(S.trigger_duration);
             io64(S.trigger_handle, S.trigger_port, 0);
         end
+        printf(logfile, '[%9.3f] TRIGGER %d \r\n', GetSecs-t0, trigger_orig);
     end   
 end
 
