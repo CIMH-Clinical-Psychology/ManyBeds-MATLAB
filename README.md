@@ -17,6 +17,7 @@ Read here how to install: [Psychtoolbox-3 - Download, Installation, and Update](
 16.10.2025 v1.5 - fix printing, improve GUI, new sounds, add better output to SART
 10.12.2025 v1.6 - fix displaying of japanese and chinese characters
 08.04.2025 v1.7 - reset keyboard queue more often, change keyboard logic
+24.04.2025 v1.8 - add trigger to log file for redundancy
 ```
 
 ## Triggers SART
