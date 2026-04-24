@@ -9,7 +9,7 @@ function [RES, S] = MBEDS_sleepstim
 
     %% initialize log file und result variables
     cleanupObj = onCleanup(@() cleanUp());  % remove screen and audio playback in case of crash
-    InitializePsychSound
+    InitializePsychSound;
 
     projectRoot = fileparts(fileparts(mfilename('fullpath')));
     addpath(projectRoot);

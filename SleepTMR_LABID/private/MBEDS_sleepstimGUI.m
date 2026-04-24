@@ -212,7 +212,7 @@ else
 end
     
 %% prepare audiobuffers
-InitializePsychSound(1) % Chose 1 to enable very low latency
+InitializePsychSound(1); % Chose 1 to enable very low latency
 
 paBGDeviceHandle = PsychPortAudio('Open', S.audio_device_id, 1, 1, S.audio_fs, 2); 
 paSTIMDeviceHandle = PsychPortAudio('Open', S.audio_device_id, 1, 1, S.audio_fs, 2); 
@@ -233,11 +233,11 @@ printed_stop_message = false;
 timestamp = string(datetime("now","Format","yymmdd-HHmmss"));
 logfile = fopen(fullfile(fileNameBase, sprintf('%s_sleepstim_logfile_%s.log', string(S.subid), timestamp)),"a");
 
-printf(logfile, "\r\n\r\nManyBeds - Lab %s (%s)\r\n",S.location, S.lab_id);
-printf(logfile, "%s\r\n", mfilename);
-printf(logfile, "Participant %s\r\n", string(S.subnr));
-printf(logfile, "%s\r\n", string(S.subid));
-printf(logfile, '%s\r\n\r\n', datetime);
+printf(logfile, "\n\nManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
+printf(logfile, "%s\n", mfilename);
+printf(logfile, "Participant %s\n", string(S.subnr));
+printf(logfile, "%s\n", string(S.subid));
+printf(logfile, '%s\n\n', datetime);
 
 %% Main Execution Thread
 RES.countstim = 0;
@@ -249,7 +249,7 @@ RES.stimtime = [];
 stimTime = 0;
 t0 = GetSecs;
 t1 = NaN;
-printf(logfile, '[%9.3f] START %s\r\n', GetSecs-t0, datetime);
+printf(logfile, '[%9.3f] START %s\n', GetSecs-t0, datetime);
 
 while ~stopExperiment
 
@@ -290,7 +290,7 @@ while ~stopExperiment
                 printf(logfile, '[%9.3f] WARNING - lastStim time was %9.3f, ignoring - the next line timing might be inaccurate',   dt, stimTime);
             end
 
-            printf(logfile, '[%9.3f] STIM %02d (%s)\r\n', dt, stim_idx, stim{1});
+            printf(logfile, '[%9.3f] STIM %02d (%s)\n', dt, stim_idx, stim{1});
             RES.stimtime = [RES.stimtime dt];
         end
     end
@@ -306,7 +306,7 @@ end
         start(t);               % start GUI refresh timer
 
         fprintf('Start of experiment (lights off): %s\n', datetime);
-        printf(logfile, '[%9.3f] LIGHTSOFF\r\n', GetSecs-t0);
+        printf(logfile, '[%9.3f] LIGHTSOFF\n', GetSecs-t0);
         t1 = GetSecs;
 
         if S.force_value
@@ -341,10 +341,10 @@ end
     function startSoundSeries(~, ~)
         printed_stop_message = false;
         fprintf('Start sound stimulation: %s\n', datetime);
-        printf(logfile, '[%9.3f] STARTSTIM\r\n', GetSecs-t0);
+        printf(logfile, '[%9.3f] STARTSTIM\n', GetSecs-t0);
 
-        sendTrigger(triggers.resume)
-        WaitSecs(0.1)  % wait to prevent overlapping triggers
+        sendTrigger(triggers.resume);
+        WaitSecs(0.1);  % wait to prevent overlapping triggers
         testSoundVolumeBtn.Enable = 'off';
         start_snd_btn.Enable = 'off';
         start_snd_btn.Value = 1;
@@ -355,7 +355,7 @@ end
 
     function stopSoundSeries(~, ~)
         fprintf('Stop sound stimulation: %s\n', datetime);
-        printf(logfile, '[%9.3f] STOPSTIM\r\n', GetSecs-t0);
+        printf(logfile, '[%9.3f] STOPSTIM\n', GetSecs-t0);
 
         sendTrigger(triggers.break)
 
@@ -382,7 +382,7 @@ end
            testSoundVolume;
         end
 
-        printf(logfile, '[%9.3f] STIMVOL+ %.2f\r\n', GetSecs-t0, RES.soundVolume);
+        printf(logfile, '[%9.3f] STIMVOL+ %.2f\n', GetSecs-t0, RES.soundVolume);
     end
 
     function decreaseSoundVolume(~, ~)
@@ -395,7 +395,7 @@ end
            testSoundVolume;
         end
 
-        printf(logfile, '[%9.3f] STIMVOL- %.2f\r\n', GetSecs-t0, RES.soundVolume);
+        printf(logfile, '[%9.3f] STIMVOL- %.2f\n', GetSecs-t0, RES.soundVolume);
     end
 
     function increaseBackgroundVolume(~, ~)
@@ -404,7 +404,7 @@ end
 
         PsychPortAudio('Volume', paBGDeviceHandle , RES.backgroundVolume);
 
-        printf(logfile, '[%9.3f] BGVOL+ %.2f\r\n', GetSecs-t0, RES.backgroundVolume);
+        printf(logfile, '[%9.3f] BGVOL+ %.2f\n', GetSecs-t0, RES.backgroundVolume);
     end
 
     function decreaseBackgroundVolume(~, ~)
@@ -413,7 +413,7 @@ end
 
         PsychPortAudio('Volume', paBGDeviceHandle , RES.backgroundVolume);
 
-        printf(logfile, '[%9.3f] BGVOL- %.2f\r\n', GetSecs-t0, RES.backgroundVolume);
+        printf(logfile, '[%9.3f] BGVOL- %.2f\n', GetSecs-t0, RES.backgroundVolume);
     end
 
     function startBackgroundTest(~, ~)
@@ -423,7 +423,7 @@ end
         status = PsychPortAudio('GetStatus', paBGDeviceHandle);
         if ~status.Active 
             PsychPortAudio('Start', paBGDeviceHandle, 0, 0, 1); 
-            printf(logfile, '[%9.3f] BACKGROUNDTESTON\r\n', GetSecs-t0);
+            printf(logfile, '[%9.3f] BACKGROUNDTESTON\n', GetSecs-t0);
         end
     end
 
@@ -432,7 +432,7 @@ end
         sendTrigger(triggers.sound_background_stop)
 
         PsychPortAudio('Stop', paBGDeviceHandle, 0);
-        printf(logfile, '[%9.3f] BACKGROUNDTESTOFF\r\n', GetSecs-t0);
+        printf(logfile, '[%9.3f] BACKGROUNDTESTOFF\n', GetSecs-t0);
     end
 
     function testSoundVolume(~, ~)
@@ -443,7 +443,7 @@ end
 
         sendTrigger(triggers.sound_test)
 
-        printf(logfile, '[%9.3f] SOUNDTEST\r\n', GetSecs-t0);
+        printf(logfile, '[%9.3f] SOUNDTEST\n', GetSecs-t0);
     end
 
     % function mouseClickHandler(~, ~)
@@ -515,7 +515,7 @@ end
             RES.ABORTED = true;
 
             fprintf('EXPERIMENT WAS ABORTED PREMATURELY: %s\n', datetime);
-            printf(logfile, '[%9.3f] ABORTED\r\n', GetSecs-t0);
+            printf(logfile, '[%9.3f] ABORTED\n', GetSecs-t0);
             endExperiment;
         end
     end
@@ -543,7 +543,7 @@ end
             end
     
             if playStimulationSounds
-                printf(logfile, '[%9.3f] STOPSTIM\r\n', GetSecs-t0);
+                printf(logfile, '[%9.3f] STOPSTIM\n', GetSecs-t0);
                 playStimulationSounds = false;
             end
      
@@ -554,8 +554,8 @@ end
             minutes = floor(mod(RES.sleepduration, 3600) / 60);
             seconds = floor(mod(RES.sleepduration, 60));
             formattedTime = sprintf('%02d:%02d:%02d', hours, minutes, seconds);
-            printf(logfile, '[%9.3f] SLEEPDURATION %s\r\n',GetSecs-t0, formattedTime);
-            printf(logfile, '[%9.3f] END %s\r\n', GetSecs-t0, datetime);
+            printf(logfile, '[%9.3f] SLEEPDURATION %s\n',GetSecs-t0, formattedTime);
+            printf(logfile, '[%9.3f] END %s\n', GetSecs-t0, datetime);
     
             if logfile > 1
                 fclose(logfile);
@@ -595,7 +595,7 @@ end
             trigger = S.force_value;
         end
         if S.debug_mode
-            disp(['[DEBUG] would send trigger: ', num2str(trigger)]);
+            printf(logfile, '[%9.3f] DEBUG TRIGGER %d \n', GetSecs-t0, trigger_orig);
             return
         end
         if trigger <= 0 || trigger > 255
@@ -611,7 +611,7 @@ end
             WaitSecs(S.trigger_duration);
             io64(S.trigger_handle, S.trigger_port, 0);
         end
-        printf(logfile, '[%9.3f] TRIGGER %d \r\n', GetSecs-t0, trigger_orig);
+        printf(logfile, '[%9.3f] TRIGGER %d \n', GetSecs-t0, trigger_orig);
     end   
 end
 
