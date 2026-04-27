@@ -155,7 +155,7 @@ function [RES, S] = MBEDS_SART
     fprintf("\nLoaded %d auditory stimuli (%d controls), will play %s repetitions\n", ...
             length(sound_ids_subject), n_stim, S.max_repetitions)
     %% define log file here to pass later into thread
-    timestamp = string(datetime("now","Format","yymmdd-HHmmss"));
+    timestamp = string(datetime("now","Format","yyMMdd-HHMMss"));
     logfile = fopen(fullfile(resultsFilePath, sprintf("%s_SART_logfile_%s.log", S.subid, timestamp)),"a");
 
     %% initialize psychtoolbox audio
