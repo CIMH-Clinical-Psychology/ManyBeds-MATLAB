@@ -14,9 +14,17 @@ function [RES, S] = MBEDS_sleepstim
     projectRoot = fileparts(fileparts(mfilename('fullpath')));
     addpath(projectRoot);
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
+    % default playback volumes (0.0 - 1.0); change per participant if needed
+    default_sound_volume      = 0.1;
+    default_background_volume = 0.9;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
+
     %% General Study Information
     C = MBEDS_LabConfig;
     S = struct;                  % contains general study information
+    S.soundVolume      = default_sound_volume;
+    S.backgroundVolume = default_background_volume;
     S.location = C.location;     % adapt according to location
     S.lab_id = C.lab_id;         % adapt according to location (LAB ID)
     S.trigger_interface = C.trigger_interface;
