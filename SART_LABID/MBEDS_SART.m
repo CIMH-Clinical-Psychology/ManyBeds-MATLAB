@@ -726,7 +726,8 @@ function [RES, S] = MBEDS_SART
             warning('Trigger value %d out of bounds (must be 1-255)', trigger);
             return
         end
-
+        
+        elapsed = GetSecs-S.t0;
         if strcmp(S.trigger_interface, "serial")
             write(S.trigger_handle, trigger, "uint8");
             WaitSecs(duration);
@@ -736,7 +737,7 @@ function [RES, S] = MBEDS_SART
             WaitSecs(duration);
             io64(S.trigger_handle, S.trigger_port, 0);
         end
-        printf(logfile, '[%9.3f] TRIGGER %d\n', GetSecs-S.t0, trigger_orig);
+        printf(logfile, '[%9.3f] TRIGGER %d\n', elapsed, trigger_orig);
     end
 end
 
@@ -862,6 +863,8 @@ function playCues(timerObj, ~)
             warning('Trigger value %d out of bounds (must be 1-255)', trigger);
             return
         end
+
+        elapsed = GetSecs-self.t0;
         if strcmp(self.trigger_interface, "serial")
             write(self.trigger_handle, trigger, "uint8");
             WaitSecs(duration);
@@ -871,7 +874,7 @@ function playCues(timerObj, ~)
             WaitSecs(duration);
             io64(self.trigger_handle, self.trigger_port, 0);
         end
-        printf(self.logfile, '[%9.3f] TRIGGER %d \n', GetSecs-self.t0, trigger_orig);
+        printf(self.logfile, '[%9.3f] TRIGGER %d \n', elapsed, trigger_orig);
     end
 end
 

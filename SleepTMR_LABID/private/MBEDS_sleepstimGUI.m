@@ -603,6 +603,8 @@ end
             warning('Trigger value %d out of bounds (must be 1-255)', trigger);
             return
         end
+        
+        elapsed = GetSecs-t0;
         if strcmp(S.trigger_interface, "serial")
             write(S.trigger_handle, trigger, "uint8");
             WaitSecs(duration);
@@ -612,7 +614,7 @@ end
             WaitSecs(duration);
             io64(S.trigger_handle, S.trigger_port, 0);
         end
-        printf(logfile, '[%9.3f] TRIGGER %d \n', GetSecs-t0, trigger_orig);
+        printf(logfile, '[%9.3f] TRIGGER %d \n', elapsed, trigger_orig);
     end
 end
 
