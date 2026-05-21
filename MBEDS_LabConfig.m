@@ -30,7 +30,7 @@ function C = MBEDS_LabConfig
     % Then, all trigger values will be overwritten and only this value sent.
     % Will also send 3x this trigger at the start and end of the experiment
     % to help synchronization. Usually only needed at site C11.
-    C.force_value = false;  % false to disable, else set to an integer value
+    C.force_value = 1;  % false to disable, else set to an integer value
 
     % 4) debug mode
     C.debug_mode = true;       % set to false to send triggers

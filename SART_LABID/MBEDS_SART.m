@@ -157,6 +157,7 @@ function [RES, S] = MBEDS_SART
     %% define log file here to pass later into thread
     timestamp = string(datetime("now","Format","yyyyMMdd_HHmmss"));
     logfile = fopen(fullfile(resultsFilePath, sprintf("%s_SART_logfile_%s.log", S.subid, timestamp)),"a");
+    cleanupLog = onCleanup(@() closeLogfile(logfile));  %#ok<NASGU> close logfile even on crash
 
     %% initialize psychtoolbox audio
     [S.audio_device_id, S.audio_fs] = chooseAudioOutputDevice();
@@ -199,11 +200,11 @@ function [RES, S] = MBEDS_SART
     tState.is_training          = S.train;  % disable cueing for training
     tState.DEBUG = S.debug;
     tState.force_value = S.force_value;
-    
+    tState.trigger_duration = S.trigger_duration;  % always set: nested sendTrigger reads this before debug check
+
     if ~S.debug
         tState.trigger_handle = S.trigger_handle;
         tState.trigger_port = S.trigger_port;
-        tState.trigger_duration = S.trigger_duration;
         tState.trigger_interface = S.trigger_interface;
     end
 
@@ -485,7 +486,7 @@ function [RES, S] = MBEDS_SART
             [tim, keyname] = waitForProbeResponse();
 
             printf(logfile, '[%9.3f] PROBE_RESPONSE %03d (%s)\n', tim - S.t0, n_probe, keyname);
-            sendTrigger(triggers.probe_base + str2double(keyname));  % should send 91-95 depending on answer
+            sendTrigger(triggers.probe_base + str2double(keyname));  % sends 17-21 depending on answer (probe_base=16, key 1-5)
             RES.proberesponses(n_probe) = str2double(keyname);
 
             tim = displayMask;
@@ -894,6 +895,15 @@ function value = drawTruncatedNormal(mean, sd)
     
     % round value to millisecond precision
     value = round(value, 3);
+end
+
+function closeLogfile(fid)
+    if ~isempty(fid) && isnumeric(fid) && fid > 2
+        try
+            fclose(fid);
+        catch
+        end
+    end
 end
 
 function printf(fileID, varargin)

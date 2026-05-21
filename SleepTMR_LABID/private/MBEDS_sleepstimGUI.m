@@ -230,7 +230,7 @@ PsychPortAudio('FillBuffer', paBGDeviceHandle, backgroundnoise);
 
 printed_stop_message = false;
 %% prepare logfile
-timestamp = string(datetime("now","Format","yymmdd-HHmmss"));
+timestamp = string(datetime("now","Format","yyMMdd-HHmmss"));
 logfile = fopen(fullfile(fileNameBase, sprintf('%s_sleepstim_logfile_%s.log', string(S.subid), timestamp)),"a");
 
 printf(logfile, "\n\nManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
@@ -280,8 +280,8 @@ while ~stopExperiment
             imshow(stim{3}, 'Parent', imageAxes);
 
             PsychPortAudio('FillBuffer', paSTIMDeviceHandle, stim{2});
-            stimTime = PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
             sendTrigger(triggers.cue_base + stim_idx)
+            stimTime = PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
 
             % safeguard to prevent negative timestamps in log file
             dt = stimTime - t0;
@@ -413,12 +413,10 @@ end
     end
 
     function startBackgroundTest(~, ~)
-
-        sendTrigger(triggers.sound_background_start)
-
         status = PsychPortAudio('GetStatus', paBGDeviceHandle);
-        if ~status.Active 
-            PsychPortAudio('Start', paBGDeviceHandle, 0, 0, 1); 
+        if ~status.Active
+            sendTrigger(triggers.sound_background_start)
+            PsychPortAudio('Start', paBGDeviceHandle, 0, 0, 1);
             printf(logfile, '[%9.3f] BACKGROUNDTESTON\n', GetSecs-t0);
         end
     end
@@ -435,9 +433,9 @@ end
         PsychPortAudio('Stop', paSTIMDeviceHandle, 0);
         stim = stim_dict(99);
         PsychPortAudio('FillBuffer', paSTIMDeviceHandle, stim{2});
-        PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
 
         sendTrigger(triggers.sound_test)
+        PsychPortAudio('Start', paSTIMDeviceHandle, 1, 0, 1);
 
         printf(logfile, '[%9.3f] SOUNDTEST\n', GetSecs-t0);
     end
