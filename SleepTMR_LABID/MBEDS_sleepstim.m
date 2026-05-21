@@ -15,9 +15,9 @@ function [RES, S] = MBEDS_sleepstim
     addpath(projectRoot);
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%
-    % default playback volumes (0.0 - 1.0); change per participant if needed
-    default_sound_volume      = 0.1;
-    default_background_volume = 0.9;
+    % default playback volumes (0.0 - 1.0); change to your preferred start settings
+    default_sound_volume      = 0.2;
+    default_background_volume = 0.5;
     %%%%%%%%%%%%%%%%%%%%%%%%%%
 
     %% General Study Information
