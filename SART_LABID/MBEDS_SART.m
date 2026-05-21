@@ -31,9 +31,11 @@ function [RES, S] = MBEDS_SART
 
     S.study = "SART";
 
-    % volumes were previously defined here; defaults now live in MBEDS_LabConfig
-    S.backgroundVolume = C.default_background_volume;
-    S.soundVolume      = C.default_sound_volume;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
+    % change per participants
+    S.backgroundVolume = 0.2;
+    S.soundVolume = 0.5;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
 
     if S.debug
          warning('The DEBUG flag has been set in the config file. Please remove before running the study')

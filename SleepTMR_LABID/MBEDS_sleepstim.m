@@ -26,9 +26,6 @@ function [RES, S] = MBEDS_sleepstim
     S.noise_type = C.noise_type;
     S.force_value = C.force_value;
     S.triggers = C.triggers;
-    % volumes were previously defined in MBEDS_sleepstimGUI; defaults now live in MBEDS_LabConfig
-    S.default_sound_volume      = C.default_sound_volume;
-    S.default_background_volume = C.default_background_volume;
 
     fprintf("ManyBeds - Lab %s (%s)\n",S.location, S.lab_id);
     S.subnr = input("Participant ID: ", "s");   % enter participant ID
