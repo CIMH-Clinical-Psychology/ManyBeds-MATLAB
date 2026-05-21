@@ -14,7 +14,7 @@ function C = MBEDS_LabConfig
     C.lab_id   = "C99";            % your lab ID       
     
     % 2) language of SART
-    C.language = "cn";             % options: 'de', 'en', 'fr', 'cn', 'jp'
+    C.language = "en";             % options: 'de', 'en', 'fr', 'cn', 'jp'
 
     % 3) type of noise
     C.noise_type = 'pink';        % can be either white or pink
@@ -22,7 +22,7 @@ function C = MBEDS_LabConfig
     % 3) trigger setup
     C.trigger_interface = "serial"; % parallel or serial
     C.trigger_port = 'COM1'; % e.g. LPT hex id or COM port
-    C.trigger_duration = 0.05;  % Trigger pulse duration in seconds, usually 5 ms
+    C.trigger_duration = 0.005;  % Trigger pulse duration in seconds, usually 5 ms
     % baudrate in case of serial COM port (ignored for parallel ports)
     C.baudrate = 2000000;  %(2000000 is default for brainproducts Triggerbox Plus)
     % Some systems only support specific trigger values.

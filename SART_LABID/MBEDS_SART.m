@@ -345,13 +345,9 @@ function [RES, S] = MBEDS_SART
 
     % send start trigger for some labs
     if S.force_value
-        % send trigger 3x quickly after each other for synchronization
-        sendTrigger(S.force_value)
-        WaitSecs(S.trigger_duration);
-        sendTrigger(S.force_value)
-        WaitSecs(S.trigger_duration);
-        sendTrigger(S.force_value)
-        WaitSecs(S.trigger_duration);
+        % send long trigger for synchronization
+        sendTrigger(S.force_value, 0.5)
+        WaitSecs(0.5);
     else
         sendTrigger(triggers.experiment_start);
     end
@@ -565,13 +561,9 @@ function [RES, S] = MBEDS_SART
     delete(cueTimer)
 
     if S.force_value
-        % send trigger 3x quickly after each other for synchronization
-        sendTrigger(S.force_value)
-        WaitSecs(S.trigger_duration);
-        sendTrigger(S.force_value)
-        WaitSecs(S.trigger_duration);
-        sendTrigger(S.force_value)
-        WaitSecs(S.trigger_duration);
+        % send long trigger for synchronization
+        sendTrigger(S.force_value, 0.5)
+        WaitSecs(0.5);
     else
         sendTrigger(triggers.experiment_end);
     end
@@ -714,7 +706,13 @@ function [RES, S] = MBEDS_SART
         tim = Screen('Flip', win);
     end
 
-    function sendTrigger(trigger)
+    function sendTrigger(trigger, duration)
+        if nargin < 2
+            duration = S.trigger_duration;
+        end
+        if duration > 1
+            error('Trigger duration %.3f s exceeds maximum of 1 s', duration);
+        end
         trigger_orig = trigger;
         if S.force_value
             % overwrite individual trigger value with this value
@@ -728,18 +726,18 @@ function [RES, S] = MBEDS_SART
             warning('Trigger value %d out of bounds (must be 1-255)', trigger);
             return
         end
-        
+
         if strcmp(S.trigger_interface, "serial")
             write(S.trigger_handle, trigger, "uint8");
-            WaitSecs(S.trigger_duration);
+            WaitSecs(duration);
             write(S.trigger_handle, 0, "uint8");
         elseif strcmp(S.trigger_interface, "parallel")
             io64(S.trigger_handle, S.trigger_port, trigger);
-            WaitSecs(S.trigger_duration);
+            WaitSecs(duration);
             io64(S.trigger_handle, S.trigger_port, 0);
         end
         printf(logfile, '[%9.3f] TRIGGER %d\n', GetSecs-S.t0, trigger_orig);
-    end   
+    end
 end
 
 
@@ -844,7 +842,13 @@ function playCues(timerObj, ~)
     set(timerObj, 'UserData', self);
 
     %% nested trigger function
-    function sendTrigger(trigger)
+    function sendTrigger(trigger, duration)
+        if nargin < 2
+            duration = self.trigger_duration;
+        end
+        if duration > 1
+            error('Trigger duration %.3f s exceeds maximum of 1 s', duration);
+        end
         trigger_orig = trigger;
         if self.force_value
             % overwrite individual trigger value with this value
@@ -860,11 +864,11 @@ function playCues(timerObj, ~)
         end
         if strcmp(self.trigger_interface, "serial")
             write(self.trigger_handle, trigger, "uint8");
-            WaitSecs(self.trigger_duration);
+            WaitSecs(duration);
             write(self.trigger_handle, 0, "uint8");
         elseif strcmp(self.trigger_interface, "parallel")
             io64(self.trigger_handle, self.trigger_port, trigger);
-            WaitSecs(self.trigger_duration);
+            WaitSecs(duration);
             io64(self.trigger_handle, self.trigger_port, 0);
         end
         printf(self.logfile, '[%9.3f] TRIGGER %d \n', GetSecs-self.t0, trigger_orig);
