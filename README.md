@@ -18,7 +18,7 @@ Read here how to install: [Psychtoolbox-3 - Download, Installation, and Update](
 10.12.2025 v1.6 - fix displaying of japanese and chinese characters
 08.04.2026 v1.7 - reset keyboard queue more often, change keyboard logic
 24.04.2026 v1.8 - add trigger to log file for redundancy
-21.05.2026 v1.9 - force_value now sends one long trigger instead of 3x short at beginning.
+21.05.2026 v1.9 - force_value now sends one long trigger instead of 3x short at beginning. Default volumes are now defined in the config.
 ```
 
 ## Triggers SART

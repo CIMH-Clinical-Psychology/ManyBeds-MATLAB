@@ -35,6 +35,11 @@ function C = MBEDS_LabConfig
     % 4) debug mode
     C.debug_mode = true;       % set to false to send triggers
 
+    % 5) default playback volumes (0.0 - 1.0)
+    %    used as starting values by both MBEDS_SART and MBEDS_sleepstim
+    C.default_sound_volume      = 0.5;
+    C.default_background_volume = 0.2;
+
     %%%%%%%%%%%%%%%%%%%%%%%
     % END OF CONFIG
     %%%%%%%%%%%%%%%%%%%%%%%
@@ -79,8 +84,16 @@ function C = MBEDS_LabConfig
 
     % make sure no field is missing
     required = ["location","lab_id", "language", "debug_mode",  ...
-                "trigger_interface", "trigger_duration", "trigger_port"];
+                "trigger_interface", "trigger_duration", "trigger_port", ...
+                "default_sound_volume", "default_background_volume"];
     assert(all(isfield(C, required)), 'Config file missing fields');
+
+    if C.default_sound_volume < 0 || C.default_sound_volume > 1
+        error('default_sound_volume must be between 0 and 1');
+    end
+    if C.default_background_volume < 0 || C.default_background_volume > 1
+        error('default_background_volume must be between 0 and 1');
+    end
 
     % explicit conversion from char to string arrays
     C.trigger_interface = string(C.trigger_interface);
